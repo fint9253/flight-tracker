@@ -1,0 +1,376 @@
+{
+  "name": "Price Alert Notifications",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Every 6 Hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  pa.\"Id\" as alert_id,\n  pa.\"OldPrice\",\n  pa.\"NewPrice\",\n  pa.\"PercentageChange\",\n  pa.\"Currency\",\n  pa.\"AlertTimestamp\",\n  tf.\"Id\" as flight_id,\n  tf.\"FlightNumber\",\n  tf.\"DepartureAirportIATA\",\n  tf.\"ArrivalAirportIATA\",\n  tf.\"DepartureDate\",\n  tf.\"NotificationThresholdPercent\"\nFROM \"PriceAlerts\" pa\nJOIN \"TrackedFlights\" tf ON pa.\"TrackedFlightId\" = tf.\"Id\"\nWHERE pa.\"IsProcessed\" = FALSE\nORDER BY pa.\"AlertTimestamp\" ASC\nLIMIT 10;",
+        "options": {}
+      },
+      "id": "get-unprocessed-alerts",
+      "name": "Get Unprocessed Alerts",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [220, 0],
+      "credentials": {
+        "postgres": {
+          "id": "POSTGRES_CREDENTIAL_ID",
+          "name": "Flight Tracker DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-has-alerts",
+              "leftValue": "={{ $json.alert_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-alerts-exist",
+      "name": "Has Alerts?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [440, 0]
+    },
+    {
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a helpful flight deal assistant. Generate an exciting, concise notification message for this price drop alert. Be enthusiastic but professional. Include all the key details.\n\nFlight: {{ $json.FlightNumber }}\nRoute: {{ $json.DepartureAirportIATA }} → {{ $json.ArrivalAirportIATA }}\nDate: {{ $json.DepartureDate }}\nOriginal Price: {{ $json.Currency }} {{ $json.OldPrice }}\nNew Price: {{ $json.Currency }} {{ $json.NewPrice }}\nPrice Drop: {{ $json.PercentageChange }}%\nUser's Threshold: {{ $json.NotificationThresholdPercent }}%\n\nGenerate a message suitable for both Slack and email. Use emojis sparingly. Keep it under 200 words."
+            }
+          ]
+        },
+        "options": {
+          "maxTokens": 300
+        }
+      },
+      "id": "claude-format",
+      "name": "Claude Format Message",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.2,
+      "position": [660, -100],
+      "credentials": {
+        "anthropicApi": {
+          "id": "ANTHROPIC_CREDENTIAL_ID",
+          "name": "Anthropic API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "extract-message",
+              "name": "formatted_message",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "keep-alert-id",
+              "name": "alert_id",
+              "value": "={{ $('Get Unprocessed Alerts').item.json.alert_id }}",
+              "type": "string"
+            },
+            {
+              "id": "keep-flight-id",
+              "name": "flight_id",
+              "value": "={{ $('Get Unprocessed Alerts').item.json.flight_id }}",
+              "type": "string"
+            },
+            {
+              "id": "keep-flight-number",
+              "name": "FlightNumber",
+              "value": "={{ $('Get Unprocessed Alerts').item.json.FlightNumber }}",
+              "type": "string"
+            },
+            {
+              "id": "keep-percentage",
+              "name": "PercentageChange",
+              "value": "={{ $('Get Unprocessed Alerts').item.json.PercentageChange }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "extract-response",
+      "name": "Extract Claude Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [880, -100]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT \"Email\", \"Name\"\nFROM \"NotificationRecipients\"\nWHERE \"TrackedFlightId\" = '{{ $json.flight_id }}'::uuid\nAND \"IsActive\" = TRUE;",
+        "options": {}
+      },
+      "id": "get-recipients",
+      "name": "Get Recipients",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1100, -100],
+      "credentials": {
+        "postgres": {
+          "id": "POSTGRES_CREDENTIAL_ID",
+          "name": "Flight Tracker DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "merge-data",
+      "name": "Merge Alert + Recipients",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [1320, -100]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.GMAIL_ADDRESS }}",
+        "toEmail": "={{ $json.Email }}",
+        "subject": "=✈️ Price Alert: {{ $json.FlightNumber }} dropped {{ $json.PercentageChange }}%",
+        "emailType": "text",
+        "message": "=Hi {{ $json.Name || 'there' }},\n\n{{ $json.formatted_message }}",
+        "options": {}
+      },
+      "id": "send-email",
+      "name": "Send Email to Each Recipient",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1540, -200],
+      "credentials": {
+        "smtp": {
+          "id": "SMTP_CREDENTIAL_ID",
+          "name": "Gmail SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "flight-tracker",
+          "mode": "name"
+        },
+        "text": "={{ $json.formatted_message }}",
+        "otherOptions": {}
+      },
+      "id": "send-slack",
+      "name": "Send to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [1540, 0],
+      "credentials": {
+        "slackApi": {
+          "id": "SLACK_CREDENTIAL_ID",
+          "name": "Slack Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE \"PriceAlerts\"\nSET \"IsProcessed\" = TRUE, \"ProcessedAt\" = NOW()\nWHERE \"Id\" = '{{ $json.alert_id }}'::uuid;",
+        "options": {}
+      },
+      "id": "mark-processed",
+      "name": "Mark as Processed",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1760, -100],
+      "credentials": {
+        "postgres": {
+          "id": "POSTGRES_CREDENTIAL_ID",
+          "name": "Flight Tracker DB"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "no-alerts",
+      "name": "No Alerts - Exit",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [660, 100]
+    }
+  ],
+  "connections": {
+    "Every 6 Hours": {
+      "main": [
+        [
+          {
+            "node": "Get Unprocessed Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Unprocessed Alerts": {
+      "main": [
+        [
+          {
+            "node": "Has Alerts?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Alerts?": {
+      "main": [
+        [
+          {
+            "node": "Claude Format Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Alerts - Exit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude Format Message": {
+      "main": [
+        [
+          {
+            "node": "Extract Claude Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Claude Response": {
+      "main": [
+        [
+          {
+            "node": "Get Recipients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Recipients": {
+      "main": [
+        [
+          {
+            "node": "Merge Alert + Recipients",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Extract Claude Response": {
+      "main": [
+        [
+          {
+            "node": "Get Recipients",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Alert + Recipients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Alert + Recipients": {
+      "main": [
+        [
+          {
+            "node": "Send Email to Each Recipient",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email to Each Recipient": {
+      "main": [
+        [
+          {
+            "node": "Mark as Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to Slack": {
+      "main": [
+        [
+          {
+            "node": "Mark as Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "pinData": {}
+}

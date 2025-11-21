@@ -1,0 +1,41 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{722DB921-F441-46F6-B6A6-24C635E961A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightTracker.Core", "src\FlightTracker.Core\FlightTracker.Core.csproj", "{6399E7E2-9FAA-42AE-B13D-2F65AE3BDBF3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightTracker.Infrastructure", "src\FlightTracker.Infrastructure\FlightTracker.Infrastructure.csproj", "{623DEE5B-F274-437A-8AB3-D583D2C0E5E2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightTracker.Api", "src\FlightTracker.Api\FlightTracker.Api.csproj", "{399217AC-6BCA-466A-88FC-A4633EF31FC3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6399E7E2-9FAA-42AE-B13D-2F65AE3BDBF3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6399E7E2-9FAA-42AE-B13D-2F65AE3BDBF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6399E7E2-9FAA-42AE-B13D-2F65AE3BDBF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6399E7E2-9FAA-42AE-B13D-2F65AE3BDBF3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{623DEE5B-F274-437A-8AB3-D583D2C0E5E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{623DEE5B-F274-437A-8AB3-D583D2C0E5E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{623DEE5B-F274-437A-8AB3-D583D2C0E5E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{623DEE5B-F274-437A-8AB3-D583D2C0E5E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{399217AC-6BCA-466A-88FC-A4633EF31FC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{399217AC-6BCA-466A-88FC-A4633EF31FC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{399217AC-6BCA-466A-88FC-A4633EF31FC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{399217AC-6BCA-466A-88FC-A4633EF31FC3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6399E7E2-9FAA-42AE-B13D-2F65AE3BDBF3} = {722DB921-F441-46F6-B6A6-24C635E961A0}
+		{623DEE5B-F274-437A-8AB3-D583D2C0E5E2} = {722DB921-F441-46F6-B6A6-24C635E961A0}
+		{399217AC-6BCA-466A-88FC-A4633EF31FC3} = {722DB921-F441-46F6-B6A6-24C635E961A0}
+	EndGlobalSection
+EndGlobal

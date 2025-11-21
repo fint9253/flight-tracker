@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    container_name: flight-tracker-db
+    environment:
+      POSTGRES_DB: flighttracker
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - flight-tracker-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # n8n Automation Platform
+  n8n:
+    image: n8nio/n8n
+    container_name: flight-tracker-n8n
+    ports:
+      - "5678:5678"
+    environment:
+      # n8n's own database (separate from app data)
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: flighttracker
+      DB_POSTGRESDB_USER: postgres
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+      # n8n settings
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: ${N8N_USER:-admin}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_PASSWORD:-admin}
+      # Webhook URL (for external triggers)
+      WEBHOOK_URL: http://localhost:5678/
+      # Generic timezone
+      GENERIC_TIMEZONE: ${TIMEZONE:-America/New_York}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - flight-tracker-network
+
+volumes:
+  postgres_data:
+  n8n_data:
+
+networks:
+  flight-tracker-network:
+    driver: bridge
