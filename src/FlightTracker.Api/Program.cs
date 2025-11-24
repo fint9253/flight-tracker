@@ -1,5 +1,8 @@
+using FlightTracker.Api.Models;
 using FlightTracker.Infrastructure;
 using FlightTracker.Infrastructure.Data;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Infrastructure (database, repositories, external services with Polly policies)
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// FluentValidation
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateTrackedFlightValidator>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
