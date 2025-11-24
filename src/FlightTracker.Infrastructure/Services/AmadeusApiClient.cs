@@ -1,0 +1,218 @@
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using FlightTracker.Core.Interfaces;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+
+namespace FlightTracker.Infrastructure.Services;
+
+public class AmadeusApiClient : IFlightPriceService
+{
+    private readonly HttpClient _httpClient;
+    private readonly IMemoryCache _cache;
+    private readonly ILogger<AmadeusApiClient> _logger;
+    private readonly string _apiKey;
+    private readonly string _apiSecret;
+    private readonly string _baseUrl;
+
+    private const string TokenCacheKey = "amadeus_access_token";
+    private const int TokenExpirySeconds = 1800; // 30 minutes
+    private const int ResponseCacheTtlMinutes = 5;
+
+    public AmadeusApiClient(
+        HttpClient httpClient,
+        IMemoryCache cache,
+        IConfiguration configuration,
+        ILogger<AmadeusApiClient> logger)
+    {
+        _httpClient = httpClient;
+        _cache = cache;
+        _logger = logger;
+
+        _apiKey = configuration["Amadeus:ApiKey"] ?? throw new InvalidOperationException("Amadeus:ApiKey not configured");
+        _apiSecret = configuration["Amadeus:ApiSecret"] ?? throw new InvalidOperationException("Amadeus:ApiSecret not configured");
+        _baseUrl = configuration["Amadeus:BaseUrl"] ?? "https://api.amadeus.com";
+
+        _httpClient.BaseAddress = new Uri(_baseUrl);
+    }
+
+    public async Task<FlightPriceData?> GetFlightPriceAsync(
+        string flightNumber,
+        string departureAirportIATA,
+        string arrivalAirportIATA,
+        DateOnly departureDate,
+        CancellationToken cancellationToken = default)
+    {
+        var cacheKey = $"flight_price_{flightNumber}_{departureAirportIATA}_{arrivalAirportIATA}_{departureDate:yyyy-MM-dd}";
+
+        // Check cache first
+        if (_cache.TryGetValue<FlightPriceData>(cacheKey, out var cachedData))
+        {
+            _logger.LogDebug("Returning cached flight price for {FlightNumber} on {Date}", flightNumber, departureDate);
+            return cachedData;
+        }
+
+        try
+        {
+            // Get access token
+            var accessToken = await GetAccessTokenAsync(cancellationToken);
+
+            // Build request URL
+            var requestUrl = $"/v2/shopping/flight-offers?originLocationCode={departureAirportIATA}" +
+                           $"&destinationLocationCode={arrivalAirportIATA}" +
+                           $"&departureDate={departureDate:yyyy-MM-dd}" +
+                           $"&adults=1" +
+                           $"&max=1";
+
+            // Make API request
+            var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+            var response = await _httpClient.SendAsync(request, cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            var content = await response.Content.ReadFromJsonAsync<AmadeusFlightOffersResponse>(cancellationToken);
+
+            if (content?.Data == null || content.Data.Count == 0)
+            {
+                _logger.LogWarning("No flight offers found for {FlightNumber} from {Origin} to {Destination} on {Date}",
+                    flightNumber, departureAirportIATA, arrivalAirportIATA, departureDate);
+                return null;
+            }
+
+            // Extract price from first offer
+            var offer = content.Data[0];
+            var priceData = new FlightPriceData
+            {
+                Price = decimal.Parse(offer.Price.GrandTotal),
+                Currency = offer.Price.Currency,
+                RetrievedAt = DateTime.UtcNow,
+                CarrierCode = offer.ValidatingAirlineCodes?.FirstOrDefault(),
+                NumberOfStops = offer.Itineraries?.FirstOrDefault()?.Segments?.Count - 1 ?? 0
+            };
+
+            // Cache the result
+            _cache.Set(cacheKey, priceData, TimeSpan.FromMinutes(ResponseCacheTtlMinutes));
+
+            _logger.LogInformation("Retrieved flight price for {FlightNumber}: {Price} {Currency}",
+                flightNumber, priceData.Price, priceData.Currency);
+
+            return priceData;
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "HTTP error while fetching flight price for {FlightNumber}", flightNumber);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching flight price for {FlightNumber}", flightNumber);
+            throw;
+        }
+    }
+
+    private async Task<string> GetAccessTokenAsync(CancellationToken cancellationToken)
+    {
+        // Check cache first
+        if (_cache.TryGetValue<string>(TokenCacheKey, out var cachedToken))
+        {
+            return cachedToken!;
+        }
+
+        _logger.LogDebug("Requesting new Amadeus access token");
+
+        // Request new token
+        var request = new HttpRequestMessage(HttpMethod.Post, "/v1/security/oauth2/token");
+        var content = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("grant_type", "client_credentials"),
+            new KeyValuePair<string, string>("client_id", _apiKey),
+            new KeyValuePair<string, string>("client_secret", _apiSecret)
+        });
+        request.Content = content;
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var tokenResponse = await response.Content.ReadFromJsonAsync<AmadeusTokenResponse>(cancellationToken);
+
+        if (tokenResponse?.AccessToken == null)
+        {
+            throw new InvalidOperationException("Failed to retrieve access token from Amadeus API");
+        }
+
+        // Cache the token (with buffer to avoid expiry edge cases)
+        var cacheExpiry = TimeSpan.FromSeconds(tokenResponse.ExpiresIn - 60);
+        _cache.Set(TokenCacheKey, tokenResponse.AccessToken, cacheExpiry);
+
+        _logger.LogInformation("Successfully obtained Amadeus access token, expires in {Seconds}s", tokenResponse.ExpiresIn);
+
+        return tokenResponse.AccessToken;
+    }
+}
+
+// Response DTOs
+internal class AmadeusTokenResponse
+{
+    [JsonPropertyName("access_token")]
+    public string? AccessToken { get; set; }
+
+    [JsonPropertyName("expires_in")]
+    public int ExpiresIn { get; set; }
+
+    [JsonPropertyName("token_type")]
+    public string? TokenType { get; set; }
+}
+
+internal class AmadeusFlightOffersResponse
+{
+    [JsonPropertyName("data")]
+    public List<FlightOffer>? Data { get; set; }
+}
+
+internal class FlightOffer
+{
+    [JsonPropertyName("price")]
+    public PriceInfo Price { get; set; } = new();
+
+    [JsonPropertyName("validatingAirlineCodes")]
+    public List<string>? ValidatingAirlineCodes { get; set; }
+
+    [JsonPropertyName("itineraries")]
+    public List<Itinerary>? Itineraries { get; set; }
+}
+
+internal class PriceInfo
+{
+    [JsonPropertyName("currency")]
+    public string Currency { get; set; } = "USD";
+
+    [JsonPropertyName("grandTotal")]
+    public string GrandTotal { get; set; } = "0";
+}
+
+internal class Itinerary
+{
+    [JsonPropertyName("segments")]
+    public List<Segment>? Segments { get; set; }
+}
+
+internal class Segment
+{
+    [JsonPropertyName("departure")]
+    public LocationInfo? Departure { get; set; }
+
+    [JsonPropertyName("arrival")]
+    public LocationInfo? Arrival { get; set; }
+}
+
+internal class LocationInfo
+{
+    [JsonPropertyName("iataCode")]
+    public string? IataCode { get; set; }
+
+    [JsonPropertyName("at")]
+    public string? At { get; set; }
+}
