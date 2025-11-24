@@ -5,8 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FlightTracker.Api.Controllers;
 
+/// <summary>
+/// API endpoints for managing tracked flights and price monitoring
+/// </summary>
 [ApiController]
 [Route("api/tracking")]
+[Produces("application/json")]
 public class TrackedFlightsController : ControllerBase
 {
     private readonly ITrackedFlightRepository _trackedFlightRepo;
@@ -26,7 +30,14 @@ public class TrackedFlightsController : ControllerBase
         _logger = logger;
     }
 
-    // POST /api/tracking - Create tracked flight
+    /// <summary>
+    /// Creates a new tracked flight for price monitoring
+    /// </summary>
+    /// <param name="request">Flight tracking details</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The created tracked flight</returns>
+    /// <response code="201">Flight tracking created successfully</response>
+    /// <response code="400">Invalid request data</response>
     [HttpPost]
     [ProducesResponseType(typeof(TrackedFlightResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -59,9 +70,17 @@ public class TrackedFlightsController : ControllerBase
         return CreatedAtAction(nameof(GetTrackedFlight), new { id = created.Id }, response);
     }
 
-    // GET /api/tracking - List user's tracked flights
+    /// <summary>
+    /// Retrieves all tracked flights for a specific user
+    /// </summary>
+    /// <param name="userId">The user's ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of tracked flights</returns>
+    /// <response code="200">Returns the list of tracked flights</response>
+    /// <response code="400">User ID is required</response>
     [HttpGet]
     [ProducesResponseType(typeof(List<TrackedFlightResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<List<TrackedFlightResponse>>> GetTrackedFlights(
         [FromQuery] string userId,
         CancellationToken cancellationToken)
@@ -77,7 +96,14 @@ public class TrackedFlightsController : ControllerBase
         return Ok(responses);
     }
 
-    // GET /api/tracking/{id} - Get specific flight
+    /// <summary>
+    /// Retrieves a specific tracked flight by ID
+    /// </summary>
+    /// <param name="id">The tracked flight ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The tracked flight details</returns>
+    /// <response code="200">Returns the tracked flight</response>
+    /// <response code="404">Tracked flight not found</response>
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(TrackedFlightResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -96,7 +122,16 @@ public class TrackedFlightsController : ControllerBase
         return Ok(response);
     }
 
-    // PATCH /api/tracking/{id} - Update settings
+    /// <summary>
+    /// Updates tracking settings for a flight (threshold, polling interval, active status)
+    /// </summary>
+    /// <param name="id">The tracked flight ID</param>
+    /// <param name="request">Update request with optional fields</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The updated tracked flight</returns>
+    /// <response code="200">Flight updated successfully</response>
+    /// <response code="400">Invalid request data</response>
+    /// <response code="404">Tracked flight not found</response>
     [HttpPatch("{id}")]
     [ProducesResponseType(typeof(TrackedFlightResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -137,7 +172,14 @@ public class TrackedFlightsController : ControllerBase
         return Ok(response);
     }
 
-    // DELETE /api/tracking/{id} - Stop tracking
+    /// <summary>
+    /// Deletes a tracked flight and stops price monitoring
+    /// </summary>
+    /// <param name="id">The tracked flight ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>No content</returns>
+    /// <response code="204">Flight deleted successfully</response>
+    /// <response code="404">Tracked flight not found</response>
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -161,7 +203,15 @@ public class TrackedFlightsController : ControllerBase
         return NoContent();
     }
 
-    // GET /api/tracking/{id}/history - Get price history
+    /// <summary>
+    /// Retrieves price history for a tracked flight
+    /// </summary>
+    /// <param name="id">The tracked flight ID</param>
+    /// <param name="limit">Optional limit on number of history records to return</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of historical prices</returns>
+    /// <response code="200">Returns price history</response>
+    /// <response code="404">Tracked flight not found</response>
     [HttpGet("{id}/history")]
     [ProducesResponseType(typeof(List<PriceHistoryResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -192,7 +242,16 @@ public class TrackedFlightsController : ControllerBase
         return Ok(responses);
     }
 
-    // POST /api/tracking/{id}/recipients - Add notification recipient
+    /// <summary>
+    /// Adds a notification recipient for price alerts
+    /// </summary>
+    /// <param name="id">The tracked flight ID</param>
+    /// <param name="request">Recipient details (email and optional name)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The created recipient</returns>
+    /// <response code="201">Recipient added successfully</response>
+    /// <response code="400">Invalid email address</response>
+    /// <response code="404">Tracked flight not found</response>
     [HttpPost("{id}/recipients")]
     [ProducesResponseType(typeof(NotificationRecipientResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -236,7 +295,15 @@ public class TrackedFlightsController : ControllerBase
         return CreatedAtAction(nameof(GetTrackedFlight), new { id }, response);
     }
 
-    // DELETE /api/tracking/{id}/recipients/{recipientId} - Remove recipient
+    /// <summary>
+    /// Removes a notification recipient from a tracked flight
+    /// </summary>
+    /// <param name="id">The tracked flight ID</param>
+    /// <param name="recipientId">The recipient ID to remove</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>No content</returns>
+    /// <response code="204">Recipient removed successfully</response>
+    /// <response code="404">Tracked flight or recipient not found</response>
     [HttpDelete("{id}/recipients/{recipientId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
