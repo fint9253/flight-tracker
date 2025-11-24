@@ -70,17 +70,24 @@ src/
    docker compose up -d
    ```
 
-2. **Run migrations:**
+2. **Configure database connection:**
+   ```bash
+   dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Database=flighttracker;Username=postgres;Password=YOUR_PASSWORD" --project src/FlightTracker.Api/FlightTracker.Api.csproj
+   ```
+   Replace `YOUR_PASSWORD` with your PostgreSQL password from `.env` file.
+
+3. **Run migrations:**
    ```bash
    dotnet ef database update --project src/FlightTracker.Infrastructure --startup-project src/FlightTracker.Api
    ```
+   Note: Migrations also run automatically on API startup.
 
-3. **Run API:**
+4. **Run API:**
    ```bash
    dotnet run --project src/FlightTracker.Api
    ```
 
-4. **Access:**
+5. **Access:**
    - API: http://localhost:5000
    - Swagger: http://localhost:5000/swagger
    - n8n: http://localhost:5678
