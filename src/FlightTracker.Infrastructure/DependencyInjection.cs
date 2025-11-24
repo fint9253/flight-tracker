@@ -83,6 +83,9 @@ public static class DependencyInjection
         // Caching
         services.AddMemoryCache();
 
+        // Background Services
+        services.AddHostedService<PricePollingService>();
+
         return services;
     }
 }
