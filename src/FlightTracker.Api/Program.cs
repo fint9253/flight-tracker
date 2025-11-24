@@ -1,3 +1,4 @@
+using FlightTracker.Infrastructure;
 using FlightTracker.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -5,9 +6,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-// Database
-builder.Services.AddDbContext<FlightTrackerDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Infrastructure (database, repositories, external services with Polly policies)
+builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
