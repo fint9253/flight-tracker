@@ -1,0 +1,178 @@
+{
+  "name": "Daily Flight Summary with Gemini AI",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule - Every Day at 8 AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "=http://host.docker.internal:5000/api/tracking",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "demo-user"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fetch-flights",
+      "name": "Fetch All Tracked Flights",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Group flights by active status and prepare data for Gemini\nconst flights = $input.all();\n\nif (flights.length === 0) {\n  return {\n    hasFlights: false,\n    message: 'No tracked flights found'\n  };\n}\n\nconst activeFlights = [];\nconst inactiveFlights = [];\n\nfor (const item of flights) {\n  const flight = item.json;\n  const flightData = {\n    flightNumber: flight.flightNumber,\n    route: `${flight.departureAirportIATA} → ${flight.arrivalAirportIATA}`,\n    departureDate: new Date(flight.departureDate).toLocaleDateString(),\n    isActive: flight.isActive,\n    lastChecked: flight.lastPolledAt ? new Date(flight.lastPolledAt).toLocaleString() : 'Never',\n    recipients: flight.recipients.length\n  };\n  \n  if (flight.isActive) {\n    activeFlights.push(flightData);\n  } else {\n    inactiveFlights.push(flightData);\n  }\n}\n\n// Prepare prompt for Gemini\nconst prompt = `\nYou are a helpful flight tracking assistant. Create a friendly and concise daily summary email for a user who is tracking ${flights.length} flight(s).\n\n**Active Flights (${activeFlights.length}):**\n${activeFlights.map(f => `- ${f.flightNumber}: ${f.route} on ${f.departureDate} (Last checked: ${f.lastChecked})`).join('\\n')}\n\n**Inactive Flights (${inactiveFlights.length}):**\n${inactiveFlights.length > 0 ? inactiveFlights.map(f => `- ${f.flightNumber}: ${f.route} on ${f.departureDate}`).join('\\n') : 'None'}\n\nWrite a brief, friendly summary (2-3 sentences) that:\n1. Welcomes the user with a greeting\n2. Summarizes their tracking status\n3. Encourages them to check the dashboard for price updates\n4. Has a warm, helpful tone\n\nKeep it under 100 words and do not use markdown formatting.\n`;\n\nreturn {\n  hasFlights: true,\n  totalFlights: flights.length,\n  activeCount: activeFlights.length,\n  inactiveCount: inactiveFlights.length,\n  activeFlights,\n  inactiveFlights,\n  geminiPrompt: prompt\n};"
+      },
+      "id": "prepare-data",
+      "name": "Prepare Summary Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={{$env.GEMINI_API_KEY}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contents",
+              "value": "={{ [{\"parts\": [{\"text\": $json.geminiPrompt}]}] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "call-gemini",
+      "name": "Generate Summary with Gemini",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract Gemini response and format email\nconst flightData = $('Prepare Summary Data').item.json;\nconst geminiResponse = $input.item.json;\n\nconst aiSummary = geminiResponse.candidates?.[0]?.content?.parts?.[0]?.text || 'Your flight tracking summary is ready!';\n\n// Build HTML email\nconst emailBody = `\n<html>\n<head>\n  <style>\n    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }\n    .container { max-width: 600px; margin: 0 auto; padding: 20px; }\n    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }\n    .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }\n    .summary-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #667eea; }\n    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px 0; }\n    .stat-card { background: white; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }\n    .stat-number { font-size: 32px; font-weight: bold; color: #667eea; }\n    .stat-label { color: #6b7280; font-size: 14px; margin-top: 5px; }\n    .flight-list { margin: 20px 0; }\n    .flight-item { background: white; padding: 15px; border-radius: 8px; margin: 10px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }\n    .flight-number { font-weight: 600; color: #667eea; }\n    .flight-route { color: #6b7280; margin-top: 5px; }\n    .cta-button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 20px; }\n    .footer { text-align: center; color: #6b7280; font-size: 12px; margin-top: 30px; }\n    .ai-badge { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; margin-left: 10px; }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>✈️ Your Daily Flight Summary</h1>\n      <p>${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>\n    </div>\n    <div class=\"content\">\n      <div class=\"summary-box\">\n        <p style=\"margin: 0; font-size: 16px;\">${aiSummary}</p>\n        <span class=\"ai-badge\">✨ Generated by Gemini AI</span>\n      </div>\n      \n      <div class=\"stats\">\n        <div class=\"stat-card\">\n          <div class=\"stat-number\">${flightData.totalFlights}</div>\n          <div class=\"stat-label\">Total Flights</div>\n        </div>\n        <div class=\"stat-card\">\n          <div class=\"stat-number\">${flightData.activeCount}</div>\n          <div class=\"stat-label\">Active</div>\n        </div>\n        <div class=\"stat-card\">\n          <div class=\"stat-number\">${flightData.inactiveCount}</div>\n          <div class=\"stat-label\">Inactive</div>\n        </div>\n      </div>\n      \n      ${flightData.activeCount > 0 ? `\n      <h3>🟢 Active Flights</h3>\n      <div class=\"flight-list\">\n        ${flightData.activeFlights.map(f => `\n        <div class=\"flight-item\">\n          <div class=\"flight-number\">${f.flightNumber}</div>\n          <div class=\"flight-route\">${f.route}</div>\n          <div style=\"font-size: 12px; color: #9ca3af; margin-top: 5px;\">\n            Departure: ${f.departureDate} | Last checked: ${f.lastChecked}\n          </div>\n        </div>\n        `).join('')}\n      </div>\n      ` : ''}\n      \n      ${flightData.inactiveCount > 0 ? `\n      <h3 style=\"margin-top: 30px;\">⏸️ Paused Flights</h3>\n      <div class=\"flight-list\">\n        ${flightData.inactiveFlights.map(f => `\n        <div class=\"flight-item\" style=\"opacity: 0.6;\">\n          <div class=\"flight-number\">${f.flightNumber}</div>\n          <div class=\"flight-route\">${f.route}</div>\n          <div style=\"font-size: 12px; color: #9ca3af; margin-top: 5px;\">\n            Departure: ${f.departureDate}\n          </div>\n        </div>\n        `).join('')}\n      </div>\n      ` : ''}\n      \n      <center>\n        <a href=\"http://localhost:5173\" class=\"cta-button\">View Dashboard</a>\n      </center>\n      \n      <div class=\"footer\">\n        <p>This is your daily flight tracking summary.</p>\n        <p>Powered by Flight Tracker & Gemini AI</p>\n      </div>\n    </div>\n  </div>\n</body>\n</html>\n`;\n\nconst subject = `✈️ Daily Flight Summary - ${flightData.activeCount} Active Flight${flightData.activeCount !== 1 ? 's' : ''}`;\n\nreturn {\n  subject,\n  emailBody,\n  recipients: $env.GMAIL_ADDRESS\n};"
+      },
+      "id": "format-summary-email",
+      "name": "Format Summary Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "generic",
+        "fromEmail": "={{$env.GMAIL_ADDRESS}}",
+        "toEmail": "={{$json.recipients}}",
+        "subject": "={{$json.subject}}",
+        "emailFormat": "html",
+        "message": "={{$json.emailBody}}",
+        "options": {}
+      },
+      "id": "send-summary-email",
+      "name": "Send Summary Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1250, 300],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail-credentials",
+          "name": "Gmail OAuth2"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule - Every Day at 8 AM": {
+      "main": [
+        [
+          {
+            "node": "Fetch All Tracked Flights",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch All Tracked Flights": {
+      "main": [
+        [
+          {
+            "node": "Prepare Summary Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Summary Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Summary with Gemini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Summary with Gemini": {
+      "main": [
+        [
+          {
+            "node": "Format Summary Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Summary Email": {
+      "main": [
+        [
+          {
+            "node": "Send Summary Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "instanceId": "flight-tracker"
+  },
+  "tags": []
+}
