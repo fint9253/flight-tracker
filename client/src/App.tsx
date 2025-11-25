@@ -1,7 +1,17 @@
 import { BrowserRouter as Router } from 'react-router-dom';
+import FlightTrackingForm from './components/FlightTrackingForm';
+import { flightTrackingApi } from './services/api';
+import type { CreateTrackedFlightRequest } from './types/api';
 import './App.css';
 
 function App() {
+  // TODO: Replace with actual user authentication
+  const userId = 'demo-user';
+
+  const handleTrackFlight = async (data: CreateTrackedFlightRequest) => {
+    await flightTrackingApi.createTrackedFlight(data);
+  };
+
   return (
     <Router>
       <div className="container">
@@ -13,13 +23,7 @@ function App() {
         </header>
 
         <main>
-          <div className="card" style={{ textAlign: 'center', margin: '2rem 0' }}>
-            <h2>Welcome!</h2>
-            <p>React app is set up and ready for development.</p>
-            <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>
-              API proxy configured to forward /api requests to localhost:5000
-            </p>
-          </div>
+          <FlightTrackingForm onSubmit={handleTrackFlight} userId={userId} />
         </main>
       </div>
     </Router>
