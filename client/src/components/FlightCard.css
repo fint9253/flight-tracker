@@ -1,0 +1,196 @@
+.flight-card {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.flight-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+}
+
+.flight-card.inactive {
+  opacity: 0.7;
+}
+
+.flight-card.past {
+  background-color: var(--bg-color);
+}
+
+/* Card Header */
+.flight-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.flight-route {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.airport {
+  color: var(--text-primary);
+}
+
+.arrow {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.flight-number {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  background-color: var(--bg-color);
+  border-radius: 0.25rem;
+}
+
+/* Card Body */
+.flight-card-body {
+  margin-bottom: 1rem;
+}
+
+.flight-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.info-item .label {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-item .value {
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.last-checked {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+.recipients {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.recipients-label {
+  font-size: 1rem;
+}
+
+.recipients-count {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+/* Card Actions */
+.flight-card-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.flight-card-actions button {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+}
+
+.flight-card-actions button:hover {
+  border-color: var(--primary-color);
+  background-color: var(--surface-color);
+}
+
+.btn-toggle.active {
+  border-color: var(--primary-color);
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn-toggle.active:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-toggle.inactive {
+  border-color: var(--text-secondary);
+}
+
+.btn-delete {
+  border-color: var(--danger-color);
+  color: var(--danger-color);
+}
+
+.btn-delete:hover {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+/* Status Badges */
+.status-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.inactive-badge {
+  background-color: var(--text-secondary);
+  color: white;
+}
+
+.past-badge {
+  background-color: var(--border-color);
+  color: var(--text-secondary);
+  top: 3rem;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .flight-info {
+    grid-template-columns: 1fr;
+  }
+
+  .flight-card-actions {
+    flex-direction: column;
+  }
+}
