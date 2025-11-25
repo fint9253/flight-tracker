@@ -1,4 +1,5 @@
 using FlightTracker.Api.Features.AddRecipient;
+using FlightTracker.Api.Features.BatchCreateTrackedFlights;
 using FlightTracker.Api.Features.CreateTrackedFlight;
 using FlightTracker.Api.Features.DeleteTrackedFlight;
 using FlightTracker.Api.Features.GetPriceHistory;
@@ -55,6 +56,55 @@ public class TrackedFlightsController : ControllerBase
 
         var results = await _sender.Send(query, cancellationToken);
         return Ok(results);
+    }
+
+    /// <summary>
+    /// Creates multiple tracked flights in a single batch operation
+    /// </summary>
+    /// <param name="request">Batch request containing multiple flight tracking requests</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Batch result with success/failure status for each flight</returns>
+    /// <response code="200">Returns batch result with per-item status</response>
+    /// <response code="400">Invalid batch request</response>
+    [HttpPost("batch")]
+    [ProducesResponseType(typeof(BatchCreateTrackedFlightsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<BatchCreateTrackedFlightsResponse>> BatchCreateTrackedFlights(
+        [FromBody] BatchCreateTrackedFlightsRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new BatchCreateTrackedFlightsCommand
+        {
+            Flights = request.Flights.Select(f => new FlightToTrack
+            {
+                UserId = f.UserId,
+                FlightNumber = f.FlightNumber,
+                DepartureAirportIATA = f.DepartureAirportIATA,
+                ArrivalAirportIATA = f.ArrivalAirportIATA,
+                DepartureDate = f.DepartureDate,
+                NotificationThresholdPercent = f.NotificationThresholdPercent,
+                PollingIntervalMinutes = f.PollingIntervalMinutes
+            }).ToList()
+        };
+
+        var result = await _sender.Send(command, cancellationToken);
+
+        var response = new BatchCreateTrackedFlightsResponse
+        {
+            TotalRequested = result.TotalRequested,
+            SuccessCount = result.SuccessCount,
+            FailureCount = result.FailureCount,
+            Results = result.Results.Select(r => new BatchFlightItemResponse
+            {
+                Index = r.Index,
+                Success = r.Success,
+                FlightId = r.FlightId,
+                FlightNumber = r.FlightNumber,
+                ErrorMessage = r.ErrorMessage
+            }).ToList()
+        };
+
+        return Ok(response);
     }
 
     /// <summary>

@@ -37,6 +37,11 @@ public record AddRecipientRequest
     public string? Name { get; init; }
 }
 
+public record BatchCreateTrackedFlightsRequest
+{
+    public List<CreateTrackedFlightRequest> Flights { get; init; } = new();
+}
+
 // Response DTOs
 public record TrackedFlightResponse
 {
@@ -70,6 +75,23 @@ public record NotificationRecipientResponse
     public string? Name { get; init; }
     public bool IsActive { get; init; }
     public DateTime CreatedAt { get; init; }
+}
+
+public record BatchCreateTrackedFlightsResponse
+{
+    public int TotalRequested { get; init; }
+    public int SuccessCount { get; init; }
+    public int FailureCount { get; init; }
+    public List<BatchFlightItemResponse> Results { get; init; } = new();
+}
+
+public record BatchFlightItemResponse
+{
+    public int Index { get; init; }
+    public bool Success { get; init; }
+    public Guid? FlightId { get; init; }
+    public string? FlightNumber { get; init; }
+    public string? ErrorMessage { get; init; }
 }
 
 // Validators for Request DTOs (HTTP layer validation)
@@ -191,5 +213,21 @@ public class SearchFlightsValidator : AbstractValidator<SearchFlightsRequest>
                 .GreaterThanOrEqualTo(x => x.ReturnDateStart!.Value)
                 .WithMessage("Return end date must be on or after return start date");
         });
+    }
+}
+
+public class BatchCreateTrackedFlightsValidator : AbstractValidator<BatchCreateTrackedFlightsRequest>
+{
+    public BatchCreateTrackedFlightsValidator()
+    {
+        RuleFor(x => x.Flights)
+            .NotEmpty()
+            .WithMessage("At least one flight must be provided");
+
+        RuleFor(x => x.Flights)
+            .Must(flights => flights.Count <= 50)
+            .WithMessage("Cannot track more than 50 flights in a single batch");
+
+        RuleForEach(x => x.Flights).SetValidator(new CreateTrackedFlightValidator());
     }
 }
