@@ -113,6 +113,11 @@ public record RouteGroupResponse
     public string DepartureAirportIATA { get; init; } = string.Empty;
     public string ArrivalAirportIATA { get; init; } = string.Empty;
     public int FlightCount { get; init; }
+    public int ActiveFlightCount { get; init; }
+    public int InactiveFlightCount { get; init; }
+    public DateOnly EarliestDepartureDate { get; init; }
+    public DateOnly LatestDepartureDate { get; init; }
+    public RouteFlightResponse? NextUpcomingFlight { get; init; }
     public List<RouteFlightResponse> Flights { get; init; } = new();
 }
 

@@ -229,6 +229,19 @@ public class TrackedFlightsController : ControllerBase
                 DepartureAirportIATA = g.DepartureAirportIATA,
                 ArrivalAirportIATA = g.ArrivalAirportIATA,
                 FlightCount = g.FlightCount,
+                ActiveFlightCount = g.ActiveFlightCount,
+                InactiveFlightCount = g.InactiveFlightCount,
+                EarliestDepartureDate = g.EarliestDepartureDate,
+                LatestDepartureDate = g.LatestDepartureDate,
+                NextUpcomingFlight = g.NextUpcomingFlight != null ? new RouteFlightResponse
+                {
+                    Id = g.NextUpcomingFlight.Id,
+                    FlightNumber = g.NextUpcomingFlight.FlightNumber,
+                    DepartureDate = g.NextUpcomingFlight.DepartureDate,
+                    NotificationThresholdPercent = g.NextUpcomingFlight.NotificationThresholdPercent,
+                    IsActive = g.NextUpcomingFlight.IsActive,
+                    LastPolledAt = g.NextUpcomingFlight.LastPolledAt
+                } : null,
                 Flights = g.Flights.Select(f => new RouteFlightResponse
                 {
                     Id = f.Id,

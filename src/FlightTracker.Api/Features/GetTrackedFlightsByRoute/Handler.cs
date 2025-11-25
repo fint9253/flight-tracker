@@ -25,15 +25,12 @@ public class GetTrackedFlightsByRouteHandler : IRequestHandler<GetTrackedFlights
 
         var flights = await _repository.GetByUserIdAsync(request.UserId, cancellationToken);
 
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var groupedFlights = flights
             .GroupBy(f => new { f.DepartureAirportIATA, f.ArrivalAirportIATA })
-            .Select(g => new RouteGroupDto
+            .Select(g =>
             {
-                Route = $"{g.Key.DepartureAirportIATA} → {g.Key.ArrivalAirportIATA}",
-                DepartureAirportIATA = g.Key.DepartureAirportIATA,
-                ArrivalAirportIATA = g.Key.ArrivalAirportIATA,
-                FlightCount = g.Count(),
-                Flights = g.Select(f => new RouteFlightDto
+                var flightDtos = g.Select(f => new RouteFlightDto
                 {
                     Id = f.Id,
                     FlightNumber = f.FlightNumber,
@@ -43,7 +40,24 @@ public class GetTrackedFlightsByRouteHandler : IRequestHandler<GetTrackedFlights
                     LastPolledAt = f.LastPolledAt
                 })
                 .OrderBy(f => f.DepartureDate)
-                .ToList()
+                .ToList();
+
+                var activeCount = flightDtos.Count(f => f.IsActive);
+                var nextFlight = flightDtos.FirstOrDefault(f => f.DepartureDate >= today);
+
+                return new RouteGroupDto
+                {
+                    Route = $"{g.Key.DepartureAirportIATA} → {g.Key.ArrivalAirportIATA}",
+                    DepartureAirportIATA = g.Key.DepartureAirportIATA,
+                    ArrivalAirportIATA = g.Key.ArrivalAirportIATA,
+                    FlightCount = flightDtos.Count,
+                    ActiveFlightCount = activeCount,
+                    InactiveFlightCount = flightDtos.Count - activeCount,
+                    EarliestDepartureDate = flightDtos.Min(f => f.DepartureDate),
+                    LatestDepartureDate = flightDtos.Max(f => f.DepartureDate),
+                    NextUpcomingFlight = nextFlight,
+                    Flights = flightDtos
+                };
             })
             .OrderBy(g => g.Route)
             .ToList();
