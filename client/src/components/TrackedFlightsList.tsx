@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { TrackedFlight } from '../types/api';
 import { flightTrackingApi } from '../services/api';
 import FlightCard from './FlightCard';
+import PriceHistoryChart from './PriceHistoryChart';
 import './TrackedFlightsList.css';
 
 interface TrackedFlightsListProps {
@@ -13,6 +14,7 @@ export default function TrackedFlightsList({ userId, onFlightDeleted }: TrackedF
   const [flights, setFlights] = useState<TrackedFlight[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFlightId, setSelectedFlightId] = useState<string | null>(null);
 
   const fetchFlights = async () => {
     try {
@@ -52,6 +54,10 @@ export default function TrackedFlightsList({ userId, onFlightDeleted }: TrackedF
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to update flight');
     }
+  };
+
+  const handleViewHistory = (flightId: string) => {
+    setSelectedFlightId(selectedFlightId === flightId ? null : flightId);
   };
 
   if (loading) {
@@ -114,6 +120,7 @@ export default function TrackedFlightsList({ userId, onFlightDeleted }: TrackedF
                 flight={flight}
                 onDelete={() => handleDelete(flight.id)}
                 onToggleActive={() => handleToggleActive(flight.id, !flight.isActive)}
+                onViewHistory={() => handleViewHistory(flight.id)}
               />
             ))}
           </div>
@@ -130,10 +137,18 @@ export default function TrackedFlightsList({ userId, onFlightDeleted }: TrackedF
                 flight={flight}
                 onDelete={() => handleDelete(flight.id)}
                 onToggleActive={() => handleToggleActive(flight.id, !flight.isActive)}
+                onViewHistory={() => handleViewHistory(flight.id)}
               />
             ))}
           </div>
         </section>
+      )}
+
+      {selectedFlightId && (
+        <PriceHistoryChart
+          flightId={selectedFlightId}
+          flightNumber={flights.find(f => f.id === selectedFlightId)?.flightNumber || 'Unknown'}
+        />
       )}
     </div>
   );
