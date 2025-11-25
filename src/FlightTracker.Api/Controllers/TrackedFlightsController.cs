@@ -5,6 +5,7 @@ using FlightTracker.Api.Features.DeleteTrackedFlight;
 using FlightTracker.Api.Features.GetPriceHistory;
 using FlightTracker.Api.Features.GetTrackedFlight;
 using FlightTracker.Api.Features.GetTrackedFlights;
+using FlightTracker.Api.Features.GetTrackedFlightsByRoute;
 using FlightTracker.Api.Features.RemoveRecipient;
 using FlightTracker.Api.Features.SearchFlights;
 using FlightTracker.Api.Features.UpdateTrackedFlight;
@@ -197,6 +198,50 @@ public class TrackedFlightsController : ControllerBase
         }).ToList();
 
         return Ok(responses);
+    }
+
+    /// <summary>
+    /// Retrieves tracked flights grouped by route (origin to destination)
+    /// </summary>
+    /// <param name="userId">The user's ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Flights grouped by route with statistics</returns>
+    /// <response code="200">Returns flights grouped by route</response>
+    /// <response code="400">User ID is required</response>
+    [HttpGet("by-route")]
+    [ProducesResponseType(typeof(GetTrackedFlightsByRouteResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<GetTrackedFlightsByRouteResponse>> GetTrackedFlightsByRoute(
+        [FromQuery] string userId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetTrackedFlightsByRouteQuery { UserId = userId };
+        var routeGroups = await _sender.Send(query, cancellationToken);
+
+        var response = new GetTrackedFlightsByRouteResponse
+        {
+            UserId = userId,
+            TotalFlights = routeGroups.Sum(g => g.FlightCount),
+            TotalRoutes = routeGroups.Count,
+            Routes = routeGroups.Select(g => new RouteGroupResponse
+            {
+                Route = g.Route,
+                DepartureAirportIATA = g.DepartureAirportIATA,
+                ArrivalAirportIATA = g.ArrivalAirportIATA,
+                FlightCount = g.FlightCount,
+                Flights = g.Flights.Select(f => new RouteFlightResponse
+                {
+                    Id = f.Id,
+                    FlightNumber = f.FlightNumber,
+                    DepartureDate = f.DepartureDate,
+                    NotificationThresholdPercent = f.NotificationThresholdPercent,
+                    IsActive = f.IsActive,
+                    LastPolledAt = f.LastPolledAt
+                }).ToList()
+            }).ToList()
+        };
+
+        return Ok(response);
     }
 
     /// <summary>

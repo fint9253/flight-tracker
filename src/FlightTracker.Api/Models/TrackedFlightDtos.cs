@@ -42,6 +42,11 @@ public record BatchCreateTrackedFlightsRequest
     public List<CreateTrackedFlightRequest> Flights { get; init; } = new();
 }
 
+public record GetTrackedFlightsByRouteRequest
+{
+    public string UserId { get; init; } = string.Empty;
+}
+
 // Response DTOs
 public record TrackedFlightResponse
 {
@@ -92,6 +97,33 @@ public record BatchFlightItemResponse
     public Guid? FlightId { get; init; }
     public string? FlightNumber { get; init; }
     public string? ErrorMessage { get; init; }
+}
+
+public record GetTrackedFlightsByRouteResponse
+{
+    public string UserId { get; init; } = string.Empty;
+    public int TotalFlights { get; init; }
+    public int TotalRoutes { get; init; }
+    public List<RouteGroupResponse> Routes { get; init; } = new();
+}
+
+public record RouteGroupResponse
+{
+    public string Route { get; init; } = string.Empty;
+    public string DepartureAirportIATA { get; init; } = string.Empty;
+    public string ArrivalAirportIATA { get; init; } = string.Empty;
+    public int FlightCount { get; init; }
+    public List<RouteFlightResponse> Flights { get; init; } = new();
+}
+
+public record RouteFlightResponse
+{
+    public Guid Id { get; init; }
+    public string FlightNumber { get; init; } = string.Empty;
+    public DateOnly DepartureDate { get; init; }
+    public decimal NotificationThresholdPercent { get; init; }
+    public bool IsActive { get; init; }
+    public DateTime? LastPolledAt { get; init; }
 }
 
 // Validators for Request DTOs (HTTP layer validation)
