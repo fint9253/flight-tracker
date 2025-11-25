@@ -1,6 +1,13 @@
+using FlightTracker.Api.Features.AddRecipient;
+using FlightTracker.Api.Features.CreateTrackedFlight;
+using FlightTracker.Api.Features.DeleteTrackedFlight;
+using FlightTracker.Api.Features.GetPriceHistory;
+using FlightTracker.Api.Features.GetTrackedFlight;
+using FlightTracker.Api.Features.GetTrackedFlights;
+using FlightTracker.Api.Features.RemoveRecipient;
+using FlightTracker.Api.Features.UpdateTrackedFlight;
 using FlightTracker.Api.Models;
-using FlightTracker.Core.Entities;
-using FlightTracker.Core.Interfaces;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FlightTracker.Api.Controllers;
@@ -13,21 +20,11 @@ namespace FlightTracker.Api.Controllers;
 [Produces("application/json")]
 public class TrackedFlightsController : ControllerBase
 {
-    private readonly ITrackedFlightRepository _trackedFlightRepo;
-    private readonly IPriceHistoryRepository _priceHistoryRepo;
-    private readonly INotificationRecipientRepository _recipientRepo;
-    private readonly ILogger<TrackedFlightsController> _logger;
+    private readonly ISender _sender;
 
-    public TrackedFlightsController(
-        ITrackedFlightRepository trackedFlightRepo,
-        IPriceHistoryRepository priceHistoryRepo,
-        INotificationRecipientRepository recipientRepo,
-        ILogger<TrackedFlightsController> logger)
+    public TrackedFlightsController(ISender sender)
     {
-        _trackedFlightRepo = trackedFlightRepo;
-        _priceHistoryRepo = priceHistoryRepo;
-        _recipientRepo = recipientRepo;
-        _logger = logger;
+        _sender = sender;
     }
 
     /// <summary>
@@ -45,7 +42,7 @@ public class TrackedFlightsController : ControllerBase
         [FromBody] CreateTrackedFlightRequest request,
         CancellationToken cancellationToken)
     {
-        var flight = new TrackedFlight
+        var command = new CreateTrackedFlightCommand
         {
             UserId = request.UserId,
             FlightNumber = request.FlightNumber,
@@ -53,21 +50,28 @@ public class TrackedFlightsController : ControllerBase
             ArrivalAirportIATA = request.ArrivalAirportIATA,
             DepartureDate = request.DepartureDate,
             NotificationThresholdPercent = request.NotificationThresholdPercent,
-            PollingIntervalMinutes = request.PollingIntervalMinutes,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            PollingIntervalMinutes = request.PollingIntervalMinutes
         };
 
-        var created = await _trackedFlightRepo.AddAsync(flight, cancellationToken);
+        var result = await _sender.Send(command, cancellationToken);
 
-        _logger.LogInformation(
-            "Created tracked flight {FlightId} for user {UserId}: {FlightNumber} from {Origin} to {Destination}",
-            created.Id, created.UserId, created.FlightNumber,
-            created.DepartureAirportIATA, created.ArrivalAirportIATA);
+        var response = new TrackedFlightResponse
+        {
+            Id = result.Id,
+            UserId = result.UserId,
+            FlightNumber = result.FlightNumber,
+            DepartureAirportIATA = result.DepartureAirportIATA,
+            ArrivalAirportIATA = result.ArrivalAirportIATA,
+            DepartureDate = result.DepartureDate,
+            NotificationThresholdPercent = result.NotificationThresholdPercent,
+            PollingIntervalMinutes = result.PollingIntervalMinutes,
+            IsActive = result.IsActive,
+            CreatedAt = result.CreatedAt,
+            UpdatedAt = result.CreatedAt,
+            Recipients = new List<NotificationRecipientResponse>()
+        };
 
-        var response = MapToResponse(created);
-        return CreatedAtAction(nameof(GetTrackedFlight), new { id = created.Id }, response);
+        return CreatedAtAction(nameof(GetTrackedFlight), new { id = result.Id }, response);
     }
 
     /// <summary>
@@ -85,13 +89,32 @@ public class TrackedFlightsController : ControllerBase
         [FromQuery] string userId,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(userId))
-        {
-            return BadRequest("UserId is required");
-        }
+        var query = new GetTrackedFlightsQuery { UserId = userId };
+        var results = await _sender.Send(query, cancellationToken);
 
-        var flights = await _trackedFlightRepo.GetByUserIdAsync(userId, cancellationToken);
-        var responses = flights.Select(MapToResponse).ToList();
+        var responses = results.Select(r => new TrackedFlightResponse
+        {
+            Id = r.Id,
+            UserId = r.UserId,
+            FlightNumber = r.FlightNumber,
+            DepartureAirportIATA = r.DepartureAirportIATA,
+            ArrivalAirportIATA = r.ArrivalAirportIATA,
+            DepartureDate = r.DepartureDate,
+            NotificationThresholdPercent = r.NotificationThresholdPercent,
+            PollingIntervalMinutes = r.PollingIntervalMinutes,
+            IsActive = r.IsActive,
+            LastPolledAt = r.LastPolledAt,
+            CreatedAt = r.CreatedAt,
+            UpdatedAt = r.UpdatedAt,
+            Recipients = r.Recipients.Select(rec => new NotificationRecipientResponse
+            {
+                Id = rec.Id,
+                Email = rec.Email,
+                Name = rec.Name,
+                IsActive = rec.IsActive,
+                CreatedAt = rec.CreatedAt
+            }).ToList()
+        }).ToList();
 
         return Ok(responses);
     }
@@ -111,14 +134,38 @@ public class TrackedFlightsController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var flight = await _trackedFlightRepo.GetByIdAsync(id, cancellationToken);
+        var query = new GetTrackedFlightQuery { Id = id };
+        var result = await _sender.Send(query, cancellationToken);
 
-        if (flight == null)
+        if (result == null)
         {
             return NotFound();
         }
 
-        var response = MapToResponse(flight);
+        var response = new TrackedFlightResponse
+        {
+            Id = result.Id,
+            UserId = result.UserId,
+            FlightNumber = result.FlightNumber,
+            DepartureAirportIATA = result.DepartureAirportIATA,
+            ArrivalAirportIATA = result.ArrivalAirportIATA,
+            DepartureDate = result.DepartureDate,
+            NotificationThresholdPercent = result.NotificationThresholdPercent,
+            PollingIntervalMinutes = result.PollingIntervalMinutes,
+            IsActive = result.IsActive,
+            LastPolledAt = result.LastPolledAt,
+            CreatedAt = result.CreatedAt,
+            UpdatedAt = result.UpdatedAt,
+            Recipients = result.Recipients.Select(r => new NotificationRecipientResponse
+            {
+                Id = r.Id,
+                Email = r.Email,
+                Name = r.Name,
+                IsActive = r.IsActive,
+                CreatedAt = r.CreatedAt
+            }).ToList()
+        };
+
         return Ok(response);
     }
 
@@ -141,34 +188,45 @@ public class TrackedFlightsController : ControllerBase
         [FromBody] UpdateTrackedFlightRequest request,
         CancellationToken cancellationToken)
     {
-        var flight = await _trackedFlightRepo.GetByIdAsync(id, cancellationToken);
+        var command = new UpdateTrackedFlightCommand
+        {
+            Id = id,
+            NotificationThresholdPercent = request.NotificationThresholdPercent,
+            PollingIntervalMinutes = request.PollingIntervalMinutes,
+            IsActive = request.IsActive
+        };
 
-        if (flight == null)
+        var result = await _sender.Send(command, cancellationToken);
+
+        if (result == null)
         {
             return NotFound();
         }
 
-        // Update only provided fields
-        if (request.NotificationThresholdPercent.HasValue)
+        var response = new TrackedFlightResponse
         {
-            flight.NotificationThresholdPercent = request.NotificationThresholdPercent.Value;
-        }
+            Id = result.Id,
+            UserId = result.UserId,
+            FlightNumber = result.FlightNumber,
+            DepartureAirportIATA = result.DepartureAirportIATA,
+            ArrivalAirportIATA = result.ArrivalAirportIATA,
+            DepartureDate = result.DepartureDate,
+            NotificationThresholdPercent = result.NotificationThresholdPercent,
+            PollingIntervalMinutes = result.PollingIntervalMinutes,
+            IsActive = result.IsActive,
+            LastPolledAt = result.LastPolledAt,
+            CreatedAt = result.CreatedAt,
+            UpdatedAt = result.UpdatedAt,
+            Recipients = result.Recipients.Select(r => new NotificationRecipientResponse
+            {
+                Id = r.Id,
+                Email = r.Email,
+                Name = r.Name,
+                IsActive = r.IsActive,
+                CreatedAt = r.CreatedAt
+            }).ToList()
+        };
 
-        if (request.PollingIntervalMinutes.HasValue)
-        {
-            flight.PollingIntervalMinutes = request.PollingIntervalMinutes.Value;
-        }
-
-        if (request.IsActive.HasValue)
-        {
-            flight.IsActive = request.IsActive.Value;
-        }
-
-        await _trackedFlightRepo.UpdateAsync(flight, cancellationToken);
-
-        _logger.LogInformation("Updated tracked flight {FlightId}", id);
-
-        var response = MapToResponse(flight);
         return Ok(response);
     }
 
@@ -187,18 +245,13 @@ public class TrackedFlightsController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var flight = await _trackedFlightRepo.GetByIdAsync(id, cancellationToken);
+        var command = new DeleteTrackedFlightCommand { Id = id };
+        var success = await _sender.Send(command, cancellationToken);
 
-        if (flight == null)
+        if (!success)
         {
             return NotFound();
         }
-
-        await _trackedFlightRepo.DeleteAsync(id, cancellationToken);
-
-        _logger.LogInformation(
-            "Deleted tracked flight {FlightId} for user {UserId}",
-            id, flight.UserId);
 
         return NoContent();
     }
@@ -220,18 +273,20 @@ public class TrackedFlightsController : ControllerBase
         [FromQuery] int? limit,
         CancellationToken cancellationToken)
     {
-        var flight = await _trackedFlightRepo.GetByIdAsync(id, cancellationToken);
+        var query = new GetPriceHistoryQuery
+        {
+            TrackedFlightId = id,
+            Limit = limit
+        };
 
-        if (flight == null)
+        var result = await _sender.Send(query, cancellationToken);
+
+        if (!result.FlightExists)
         {
             return NotFound();
         }
 
-        var history = limit.HasValue
-            ? await _priceHistoryRepo.GetByFlightIdAsync(id, limit.Value, cancellationToken)
-            : await _priceHistoryRepo.GetByFlightIdAsync(id, cancellationToken);
-
-        var responses = history.Select(h => new PriceHistoryResponse
+        var responses = result.History.Select(h => new PriceHistoryResponse
         {
             Id = h.Id,
             Price = h.Price,
@@ -261,35 +316,27 @@ public class TrackedFlightsController : ControllerBase
         [FromBody] AddRecipientRequest request,
         CancellationToken cancellationToken)
     {
-        var flight = await _trackedFlightRepo.GetByIdAsync(id, cancellationToken);
+        var command = new AddRecipientCommand
+        {
+            TrackedFlightId = id,
+            Email = request.Email,
+            Name = request.Name
+        };
 
-        if (flight == null)
+        var result = await _sender.Send(command, cancellationToken);
+
+        if (!result.FlightExists)
         {
             return NotFound();
         }
 
-        var recipient = new NotificationRecipient
-        {
-            TrackedFlightId = id,
-            Email = request.Email,
-            Name = request.Name,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        var created = await _recipientRepo.AddAsync(recipient, cancellationToken);
-
-        _logger.LogInformation(
-            "Added recipient {Email} to tracked flight {FlightId}",
-            created.Email, id);
-
         var response = new NotificationRecipientResponse
         {
-            Id = created.Id,
-            Email = created.Email,
-            Name = created.Name,
-            IsActive = created.IsActive,
-            CreatedAt = created.CreatedAt
+            Id = result.Recipient!.Id,
+            Email = result.Recipient.Email,
+            Name = result.Recipient.Name,
+            IsActive = result.Recipient.IsActive,
+            CreatedAt = result.Recipient.CreatedAt
         };
 
         return CreatedAtAction(nameof(GetTrackedFlight), new { id }, response);
@@ -312,53 +359,19 @@ public class TrackedFlightsController : ControllerBase
         Guid recipientId,
         CancellationToken cancellationToken)
     {
-        var flight = await _trackedFlightRepo.GetByIdAsync(id, cancellationToken);
-
-        if (flight == null)
+        var command = new RemoveRecipientCommand
         {
-            return NotFound("Tracked flight not found");
-        }
+            TrackedFlightId = id,
+            RecipientId = recipientId
+        };
 
-        var recipient = await _recipientRepo.GetByIdAsync(recipientId, cancellationToken);
+        var result = await _sender.Send(command, cancellationToken);
 
-        if (recipient == null || recipient.TrackedFlightId != id)
+        if (!result.Success)
         {
-            return NotFound("Recipient not found");
+            return NotFound(result.ErrorMessage);
         }
-
-        await _recipientRepo.DeleteAsync(recipientId, cancellationToken);
-
-        _logger.LogInformation(
-            "Removed recipient {RecipientId} from tracked flight {FlightId}",
-            recipientId, id);
 
         return NoContent();
-    }
-
-    private static TrackedFlightResponse MapToResponse(TrackedFlight flight)
-    {
-        return new TrackedFlightResponse
-        {
-            Id = flight.Id,
-            UserId = flight.UserId,
-            FlightNumber = flight.FlightNumber,
-            DepartureAirportIATA = flight.DepartureAirportIATA,
-            ArrivalAirportIATA = flight.ArrivalAirportIATA,
-            DepartureDate = flight.DepartureDate,
-            NotificationThresholdPercent = flight.NotificationThresholdPercent,
-            PollingIntervalMinutes = flight.PollingIntervalMinutes,
-            IsActive = flight.IsActive,
-            LastPolledAt = flight.LastPolledAt,
-            CreatedAt = flight.CreatedAt,
-            UpdatedAt = flight.UpdatedAt,
-            Recipients = flight.NotificationRecipients?.Select(r => new NotificationRecipientResponse
-            {
-                Id = r.Id,
-                Email = r.Email,
-                Name = r.Name,
-                IsActive = r.IsActive,
-                CreatedAt = r.CreatedAt
-            }).ToList() ?? new List<NotificationRecipientResponse>()
-        };
     }
 }

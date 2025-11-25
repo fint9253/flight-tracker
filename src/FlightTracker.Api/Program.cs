@@ -12,9 +12,15 @@ var builder = WebApplication.CreateBuilder(args);
 // Infrastructure (database, repositories, external services with Polly policies)
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// MediatR (CQRS pattern with vertical slices)
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
+    cfg.AddOpenBehavior(typeof(FlightTracker.Api.Behaviors.ValidationBehavior<,>));
+});
+
 // FluentValidation
-builder.Services.AddFluentValidationAutoValidation();
-builder.Services.AddValidatorsFromAssemblyContaining<CreateTrackedFlightValidator>();
+builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 
 builder.Services.AddControllers();
 
