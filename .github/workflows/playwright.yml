@@ -1,0 +1,77 @@
+name: Playwright Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: flighttracker
+          POSTGRES_USER: flighttracker
+          POSTGRES_PASSWORD: flighttracker_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore .NET dependencies
+        run: dotnet restore
+
+      - name: Build .NET API
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run database migrations
+        run: dotnet ef database update --project src/FlightTracker.Infrastructure --startup-project src/FlightTracker.Api
+        env:
+          ConnectionStrings__DefaultConnection: "Host=localhost;Database=flighttracker;Username=flighttracker;Password=flighttracker_password"
+
+      - name: Start API server
+        run: |
+          cd src/FlightTracker.Api
+          dotnet run --no-build --configuration Release &
+          sleep 10
+        env:
+          ConnectionStrings__DefaultConnection: "Host=localhost;Database=flighttracker;Username=flighttracker;Password=flighttracker_password"
+          ASPNETCORE_URLS: "http://localhost:5000"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright dependencies
+        run: npm install
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright tests
+        run: npm run test
+
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30

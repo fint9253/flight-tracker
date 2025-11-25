@@ -1,0 +1,16 @@
+{
+  "name": "flight-tracker",
+  "version": "1.0.0",
+  "description": "Flight price tracking and notification system",
+  "scripts": {
+    "test": "playwright test",
+    "test:api": "playwright test --project=api-tests",
+    "test:e2e": "playwright test --project=e2e-tests",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.57.0"
+  }
+}
