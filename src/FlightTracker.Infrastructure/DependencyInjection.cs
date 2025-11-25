@@ -26,7 +26,8 @@ public static class DependencyInjection
         services.AddScoped<INotificationRecipientRepository, NotificationRecipientRepository>();
 
         // External Services with Polly resilience policies
-        services.AddHttpClient<IFlightPriceService, AmadeusApiClient>()
+        // Register AmadeusApiClient for both IFlightPriceService and IFlightSearchService
+        services.AddHttpClient<AmadeusApiClient>()
             .AddPolicyHandler((serviceProvider, request) =>
             {
                 var logger = serviceProvider.GetRequiredService<ILogger<AmadeusApiClient>>();
@@ -79,6 +80,10 @@ public static class DependencyInjection
                 return circuitBreakerPolicy;
             })
             .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(30)));
+
+        // Register interface implementations for AmadeusApiClient
+        services.AddScoped<IFlightPriceService>(sp => sp.GetRequiredService<AmadeusApiClient>());
+        services.AddScoped<IFlightSearchService>(sp => sp.GetRequiredService<AmadeusApiClient>());
 
         // Caching
         services.AddMemoryCache();

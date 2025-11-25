@@ -5,6 +5,7 @@ using FlightTracker.Api.Features.GetPriceHistory;
 using FlightTracker.Api.Features.GetTrackedFlight;
 using FlightTracker.Api.Features.GetTrackedFlights;
 using FlightTracker.Api.Features.RemoveRecipient;
+using FlightTracker.Api.Features.SearchFlights;
 using FlightTracker.Api.Features.UpdateTrackedFlight;
 using FlightTracker.Api.Models;
 using MediatR;
@@ -25,6 +26,35 @@ public class TrackedFlightsController : ControllerBase
     public TrackedFlightsController(ISender sender)
     {
         _sender = sender;
+    }
+
+    /// <summary>
+    /// Searches for available flights on a route within a date range
+    /// </summary>
+    /// <param name="request">Search criteria including origin, destination, and date ranges</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of available flights with prices</returns>
+    /// <response code="200">Returns available flights</response>
+    /// <response code="400">Invalid search criteria</response>
+    [HttpPost("search")]
+    [ProducesResponseType(typeof(List<FlightSearchResultDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<List<FlightSearchResultDto>>> SearchFlights(
+        [FromBody] SearchFlightsRequest request,
+        CancellationToken cancellationToken)
+    {
+        var query = new SearchFlightsQuery
+        {
+            OriginIATA = request.OriginIATA,
+            DestinationIATA = request.DestinationIATA,
+            DepartureDateStart = request.DepartureDateStart,
+            DepartureDateEnd = request.DepartureDateEnd,
+            ReturnDateStart = request.ReturnDateStart,
+            ReturnDateEnd = request.ReturnDateEnd
+        };
+
+        var results = await _sender.Send(query, cancellationToken);
+        return Ok(results);
     }
 
     /// <summary>

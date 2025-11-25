@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace FlightTracker.Infrastructure.Services;
 
-public class AmadeusApiClient : IFlightPriceService
+public class AmadeusApiClient : IFlightPriceService, IFlightSearchService
 {
     private readonly HttpClient _httpClient;
     private readonly IMemoryCache _cache;
@@ -151,6 +151,86 @@ public class AmadeusApiClient : IFlightPriceService
 
         return tokenResponse.AccessToken;
     }
+
+    public async Task<List<FlightSearchResult>> SearchFlightsAsync(
+        string originIATA,
+        string destinationIATA,
+        DateOnly departureDateStart,
+        DateOnly departureDateEnd,
+        DateOnly? returnDateStart = null,
+        DateOnly? returnDateEnd = null,
+        CancellationToken cancellationToken = default)
+    {
+        var results = new List<FlightSearchResult>();
+
+        try
+        {
+            var accessToken = await GetAccessTokenAsync(cancellationToken);
+
+            // Search for each date in the range (Amadeus doesn't support date ranges directly)
+            var currentDate = departureDateStart;
+            while (currentDate <= departureDateEnd)
+            {
+                var requestUrl = $"/v2/shopping/flight-offers?originLocationCode={originIATA}" +
+                               $"&destinationLocationCode={destinationIATA}" +
+                               $"&departureDate={currentDate:yyyy-MM-dd}" +
+                               $"&adults=1" +
+                               $"&max=10"; // Get multiple offers per date
+
+                var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+                var response = await _httpClient.SendAsync(request, cancellationToken);
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadFromJsonAsync<AmadeusFlightOffersResponse>(cancellationToken);
+
+                if (content?.Data != null)
+                {
+                    foreach (var offer in content.Data)
+                    {
+                        var firstSegment = offer.Itineraries?.FirstOrDefault()?.Segments?.FirstOrDefault();
+                        var lastSegment = offer.Itineraries?.FirstOrDefault()?.Segments?.LastOrDefault();
+
+                        if (firstSegment?.Departure != null && lastSegment?.Arrival != null)
+                        {
+                            var departureDateTime = DateTime.Parse(firstSegment.Departure.At!);
+                            var arrivalDateTime = DateTime.Parse(lastSegment.Arrival.At!);
+
+                            results.Add(new FlightSearchResult
+                            {
+                                FlightNumber = firstSegment.CarrierCode + firstSegment.Number,
+                                AirlineCode = offer.ValidatingAirlineCodes?.FirstOrDefault() ?? firstSegment.CarrierCode ?? "",
+                                OriginIATA = originIATA,
+                                DestinationIATA = destinationIATA,
+                                DepartureDate = DateOnly.FromDateTime(departureDateTime),
+                                DepartureTime = TimeOnly.FromDateTime(departureDateTime),
+                                ArrivalTime = TimeOnly.FromDateTime(arrivalDateTime),
+                                Price = decimal.Parse(offer.Price.GrandTotal),
+                                Currency = offer.Price.Currency,
+                                NumberOfStops = (offer.Itineraries?.FirstOrDefault()?.Segments?.Count ?? 1) - 1,
+                                Duration = arrivalDateTime - departureDateTime
+                            });
+                        }
+                    }
+                }
+
+                currentDate = currentDate.AddDays(1);
+            }
+
+            _logger.LogInformation(
+                "Flight search completed: {Origin} -> {Destination}, {DateStart} to {DateEnd}, found {Count} flights",
+                originIATA, destinationIATA, departureDateStart, departureDateEnd, results.Count);
+
+            return results;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching flights from {Origin} to {Destination}",
+                originIATA, destinationIATA);
+            throw;
+        }
+    }
 }
 
 // Response DTOs
@@ -206,6 +286,12 @@ internal class Segment
 
     [JsonPropertyName("arrival")]
     public LocationInfo? Arrival { get; set; }
+
+    [JsonPropertyName("carrierCode")]
+    public string? CarrierCode { get; set; }
+
+    [JsonPropertyName("number")]
+    public string? Number { get; set; }
 }
 
 internal class LocationInfo
