@@ -66,7 +66,7 @@ export default function FlightTrackingForm({ onSubmit, userId }: FlightTrackingF
         <div className="form-row">
           <div className="form-group">
             <label htmlFor="departureDate">
-              Departure Date (±{formData.dateFlexibilityDays} days) <span className="required">*</span>
+              Departure Date <span className="required">*</span>
             </label>
             <input
               id="departureDate"
@@ -76,9 +76,25 @@ export default function FlightTrackingForm({ onSubmit, userId }: FlightTrackingF
               min={new Date().toISOString().split('T')[0]}
               required
             />
-            <small>We'll search {formData.dateFlexibilityDays} days before and after this date</small>
           </div>
 
+          <div className="form-group">
+            <label htmlFor="dateFlexibilityDays">
+              Date Flexibility (days)
+            </label>
+            <input
+              id="dateFlexibilityDays"
+              type="number"
+              min="0"
+              max="7"
+              value={formData.dateFlexibilityDays}
+              onChange={(e) => handleChange('dateFlexibilityDays', Number(e.target.value))}
+            />
+            <small>Search ±{formData.dateFlexibilityDays} days around departure date</small>
+          </div>
+        </div>
+
+        <div className="form-row">
           <div className="form-group">
             <label htmlFor="maxStops">
               Maximum Stops

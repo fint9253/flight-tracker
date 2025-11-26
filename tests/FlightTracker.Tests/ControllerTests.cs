@@ -39,10 +39,11 @@ public class TrackedFlightsControllerTests
         var request = new CreateTrackedFlightRequest
         {
             UserId = "user123",
-            FlightNumber = "AA123",
             DepartureAirportIATA = "JFK",
             ArrivalAirportIATA = "LAX",
             DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+            DateFlexibilityDays = 3,
+            MaxStops = null,
             NotificationThresholdPercent = 5.00m,
             PollingIntervalMinutes = 15
         };
@@ -51,10 +52,11 @@ public class TrackedFlightsControllerTests
         {
             Id = Guid.NewGuid(),
             UserId = request.UserId,
-            FlightNumber = request.FlightNumber,
             DepartureAirportIATA = request.DepartureAirportIATA,
             ArrivalAirportIATA = request.ArrivalAirportIATA,
             DepartureDate = request.DepartureDate,
+            DateFlexibilityDays = request.DateFlexibilityDays,
+            MaxStops = request.MaxStops,
             NotificationThresholdPercent = request.NotificationThresholdPercent,
             PollingIntervalMinutes = request.PollingIntervalMinutes,
             IsActive = true,
@@ -74,8 +76,7 @@ public class TrackedFlightsControllerTests
         var createdResult = result.Result as CreatedAtActionResult;
         createdResult!.Value.Should().BeOfType<TrackedFlightResponse>();
         var response = createdResult.Value as TrackedFlightResponse;
-        response!.FlightNumber.Should().Be(request.FlightNumber);
-        response.UserId.Should().Be(request.UserId);
+        response!.UserId.Should().Be(request.UserId);
     }
 
     [Fact(Skip = "Controller refactored to use MediatR - tests need to be rewritten for handlers")]
@@ -87,10 +88,11 @@ public class TrackedFlightsControllerTests
         {
             Id = flightId,
             UserId = "user123",
-            FlightNumber = "AA123",
             DepartureAirportIATA = "JFK",
             ArrivalAirportIATA = "LAX",
             DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+            DateFlexibilityDays = 3,
+            MaxStops = 0,
             NotificationRecipients = new List<NotificationRecipient>()
         };
 
@@ -136,20 +138,22 @@ public class TrackedFlightsControllerTests
             new() {
                 Id = Guid.NewGuid(),
                 UserId = userId,
-                FlightNumber = "AA123",
                 DepartureAirportIATA = "JFK",
                 ArrivalAirportIATA = "LAX",
                 DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+                DateFlexibilityDays = 3,
+                MaxStops = null,
                 PriceHistories = new List<PriceHistory>(),
                 NotificationRecipients = new List<NotificationRecipient>()
             },
             new() {
                 Id = Guid.NewGuid(),
                 UserId = userId,
-                FlightNumber = "BA456",
                 DepartureAirportIATA = "LHR",
                 ArrivalAirportIATA = "JFK",
                 DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(14)),
+                DateFlexibilityDays = 2,
+                MaxStops = 1,
                 PriceHistories = new List<PriceHistory>(),
                 NotificationRecipients = new List<NotificationRecipient>()
             }
@@ -190,10 +194,11 @@ public class TrackedFlightsControllerTests
         {
             Id = flightId,
             UserId = "user123",
-            FlightNumber = "AA123",
             DepartureAirportIATA = "JFK",
             ArrivalAirportIATA = "LAX",
             DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+            DateFlexibilityDays = 3,
+            MaxStops = 1,
             NotificationThresholdPercent = 5.00m,
             PollingIntervalMinutes = 15,
             IsActive = true,
@@ -236,10 +241,11 @@ public class TrackedFlightsControllerTests
         {
             Id = flightId,
             UserId = "user123",
-            FlightNumber = "AA123",
             DepartureAirportIATA = "JFK",
             ArrivalAirportIATA = "LAX",
-            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7))
+            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+            DateFlexibilityDays = 3,
+            MaxStops = null
         };
 
         _trackedFlightRepoMock

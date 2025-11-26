@@ -45,10 +45,11 @@ public class RepositoryIntegrationTests : IAsyncLifetime
         var flight = new TrackedFlight
         {
             UserId = "user123",
-            FlightNumber = "AA123",
             DepartureAirportIATA = "JFK",
             ArrivalAirportIATA = "LAX",
             DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+            DateFlexibilityDays = 3,
+            MaxStops = null,
             NotificationThresholdPercent = 5.00m,
             PollingIntervalMinutes = 15,
             IsActive = true
@@ -60,7 +61,6 @@ public class RepositoryIntegrationTests : IAsyncLifetime
 
         // Assert
         retrieved.Should().NotBeNull();
-        retrieved!.FlightNumber.Should().Be("AA123");
         retrieved.UserId.Should().Be("user123");
         retrieved.IsActive.Should().BeTrue();
     }
@@ -75,19 +75,21 @@ public class RepositoryIntegrationTests : IAsyncLifetime
         await repository.AddAsync(new TrackedFlight
         {
             UserId = userId,
-            FlightNumber = "BA123",
             DepartureAirportIATA = "LHR",
             ArrivalAirportIATA = "JFK",
-            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7))
+            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+            DateFlexibilityDays = 3,
+            MaxStops = 0
         });
 
         await repository.AddAsync(new TrackedFlight
         {
             UserId = userId,
-            FlightNumber = "BA456",
             DepartureAirportIATA = "LHR",
             ArrivalAirportIATA = "LAX",
-            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(14))
+            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(14)),
+            DateFlexibilityDays = 2,
+            MaxStops = 1
         });
 
         // Act
@@ -108,10 +110,11 @@ public class RepositoryIntegrationTests : IAsyncLifetime
         await repository.AddAsync(new TrackedFlight
         {
             UserId = "user789",
-            FlightNumber = "DL123",
             DepartureAirportIATA = "ATL",
             ArrivalAirportIATA = "LAX",
             DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+            DateFlexibilityDays = 3,
+            MaxStops = null,
             PollingIntervalMinutes = 15,
             LastPolledAt = null
         });
@@ -120,10 +123,11 @@ public class RepositoryIntegrationTests : IAsyncLifetime
         await repository.AddAsync(new TrackedFlight
         {
             UserId = "user789",
-            FlightNumber = "DL456",
             DepartureAirportIATA = "ATL",
             ArrivalAirportIATA = "JFK",
             DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(14)),
+            DateFlexibilityDays = 2,
+            MaxStops = 0,
             PollingIntervalMinutes = 15,
             LastPolledAt = DateTime.UtcNow.AddMinutes(-20)
         });
@@ -132,10 +136,11 @@ public class RepositoryIntegrationTests : IAsyncLifetime
         await repository.AddAsync(new TrackedFlight
         {
             UserId = "user789",
-            FlightNumber = "DL789",
             DepartureAirportIATA = "ATL",
             ArrivalAirportIATA = "ORD",
             DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(21)),
+            DateFlexibilityDays = 1,
+            MaxStops = 2,
             PollingIntervalMinutes = 15,
             LastPolledAt = DateTime.UtcNow.AddMinutes(-5)
         });
@@ -157,10 +162,11 @@ public class RepositoryIntegrationTests : IAsyncLifetime
         var flight = await flightRepo.AddAsync(new TrackedFlight
         {
             UserId = "user123",
-            FlightNumber = "AA999",
             DepartureAirportIATA = "JFK",
             ArrivalAirportIATA = "LAX",
-            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7))
+            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+            DateFlexibilityDays = 3,
+            MaxStops = null
         });
 
         // Add price history
@@ -185,10 +191,11 @@ public class RepositoryIntegrationTests : IAsyncLifetime
         var flight = await flightRepo.AddAsync(new TrackedFlight
         {
             UserId = "user555",
-            FlightNumber = "UA123",
             DepartureAirportIATA = "ORD",
             ArrivalAirportIATA = "SFO",
-            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7))
+            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+            DateFlexibilityDays = 3,
+            MaxStops = 1
         });
 
         // Add alerts
@@ -231,10 +238,11 @@ public class RepositoryIntegrationTests : IAsyncLifetime
         var flight = await flightRepo.AddAsync(new TrackedFlight
         {
             UserId = "user777",
-            FlightNumber = "SW123",
             DepartureAirportIATA = "LAX",
             ArrivalAirportIATA = "LAS",
-            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7))
+            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+            DateFlexibilityDays = 3,
+            MaxStops = 0
         });
 
         await recipientRepo.AddAsync(new NotificationRecipient
@@ -275,10 +283,11 @@ public class RepositoryIntegrationTests : IAsyncLifetime
         var flight = await flightRepo.AddAsync(new TrackedFlight
         {
             UserId = "integration_user",
-            FlightNumber = "TEST123",
             DepartureAirportIATA = "JFK",
             ArrivalAirportIATA = "LAX",
             DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)),
+            DateFlexibilityDays = 3,
+            MaxStops = null,
             NotificationThresholdPercent = 5.00m,
             PollingIntervalMinutes = 15,
             IsActive = true

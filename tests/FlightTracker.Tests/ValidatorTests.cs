@@ -15,10 +15,11 @@ public class CreateTrackedFlightValidatorTests
         var request = new CreateTrackedFlightRequest
         {
             UserId = "user123",
-            FlightNumber = "AA123",
             DepartureAirportIATA = "JFK",
             ArrivalAirportIATA = "LAX",
             DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+            DateFlexibilityDays = 3,
+            MaxStops = null,
             NotificationThresholdPercent = 5.00m,
             PollingIntervalMinutes = 15
         };
@@ -39,10 +40,11 @@ public class CreateTrackedFlightValidatorTests
         var request = new CreateTrackedFlightRequest
         {
             UserId = userId,
-            FlightNumber = "AA123",
             DepartureAirportIATA = "JFK",
             ArrivalAirportIATA = "LAX",
-            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7))
+            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+            DateFlexibilityDays = 3,
+            MaxStops = null
         };
 
         // Act
@@ -51,56 +53,6 @@ public class CreateTrackedFlightValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.PropertyName == nameof(CreateTrackedFlightRequest.UserId));
-    }
-
-    [Theory]
-    [InlineData("AA123")]  // Valid
-    [InlineData("BA456")]  // Valid
-    [InlineData("DL1234")] // Valid
-    public void FlightNumber_ValidFormat_Passes(string flightNumber)
-    {
-        // Arrange
-        var request = new CreateTrackedFlightRequest
-        {
-            UserId = "user123",
-            FlightNumber = flightNumber,
-            DepartureAirportIATA = "JFK",
-            ArrivalAirportIATA = "LAX",
-            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7))
-        };
-
-        // Act
-        var result = _validator.Validate(request);
-
-        // Assert
-        result.IsValid.Should().BeTrue();
-    }
-
-    [Theory]
-    [InlineData("AA")]      // Missing numbers
-    [InlineData("123")]     // Missing letters
-    [InlineData("aa123")]   // Lowercase letters
-    [InlineData("A123")]    // Only one letter
-    [InlineData("AAA123")]  // Three letters
-    [InlineData("AA 123")]  // Space
-    public void FlightNumber_InvalidFormat_Fails(string flightNumber)
-    {
-        // Arrange
-        var request = new CreateTrackedFlightRequest
-        {
-            UserId = "user123",
-            FlightNumber = flightNumber,
-            DepartureAirportIATA = "JFK",
-            ArrivalAirportIATA = "LAX",
-            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7))
-        };
-
-        // Act
-        var result = _validator.Validate(request);
-
-        // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(CreateTrackedFlightRequest.FlightNumber));
     }
 
     [Theory]
@@ -113,10 +65,11 @@ public class CreateTrackedFlightValidatorTests
         var request = new CreateTrackedFlightRequest
         {
             UserId = "user123",
-            FlightNumber = "AA123",
             DepartureAirportIATA = iataCode,
             ArrivalAirportIATA = "LAX",
-            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7))
+            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+            DateFlexibilityDays = 3,
+            MaxStops = null
         };
 
         // Act
@@ -138,10 +91,11 @@ public class CreateTrackedFlightValidatorTests
         var request = new CreateTrackedFlightRequest
         {
             UserId = "user123",
-            FlightNumber = "AA123",
             DepartureAirportIATA = iataCode,
             ArrivalAirportIATA = "LAX",
-            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7))
+            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+            DateFlexibilityDays = 3,
+            MaxStops = null
         };
 
         // Act
@@ -159,10 +113,11 @@ public class CreateTrackedFlightValidatorTests
         var request = new CreateTrackedFlightRequest
         {
             UserId = "user123",
-            FlightNumber = "AA123",
             DepartureAirportIATA = "JFK",
             ArrivalAirportIATA = "LAX",
-            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1))
+            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)),
+            DateFlexibilityDays = 3,
+            MaxStops = null
         };
 
         // Act
@@ -180,10 +135,11 @@ public class CreateTrackedFlightValidatorTests
         var request = new CreateTrackedFlightRequest
         {
             UserId = "user123",
-            FlightNumber = "AA123",
             DepartureAirportIATA = "JFK",
             ArrivalAirportIATA = "LAX",
-            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow)
+            DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            DateFlexibilityDays = 3,
+            MaxStops = null
         };
 
         // Act
@@ -203,10 +159,11 @@ public class CreateTrackedFlightValidatorTests
         var request = new CreateTrackedFlightRequest
         {
             UserId = "user123",
-            FlightNumber = "AA123",
             DepartureAirportIATA = "JFK",
             ArrivalAirportIATA = "LAX",
             DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+            DateFlexibilityDays = 3,
+            MaxStops = null,
             NotificationThresholdPercent = threshold
         };
 
@@ -229,10 +186,11 @@ public class CreateTrackedFlightValidatorTests
         var request = new CreateTrackedFlightRequest
         {
             UserId = "user123",
-            FlightNumber = "AA123",
             DepartureAirportIATA = "JFK",
             ArrivalAirportIATA = "LAX",
             DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+            DateFlexibilityDays = 3,
+            MaxStops = null,
             NotificationThresholdPercent = threshold
         };
 
@@ -252,10 +210,11 @@ public class CreateTrackedFlightValidatorTests
         var request = new CreateTrackedFlightRequest
         {
             UserId = "user123",
-            FlightNumber = "AA123",
             DepartureAirportIATA = "JFK",
             ArrivalAirportIATA = "LAX",
             DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+            DateFlexibilityDays = 3,
+            MaxStops = null,
             PollingIntervalMinutes = interval
         };
 
@@ -278,10 +237,11 @@ public class CreateTrackedFlightValidatorTests
         var request = new CreateTrackedFlightRequest
         {
             UserId = "user123",
-            FlightNumber = "AA123",
             DepartureAirportIATA = "JFK",
             ArrivalAirportIATA = "LAX",
             DepartureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+            DateFlexibilityDays = 3,
+            MaxStops = null,
             PollingIntervalMinutes = interval
         };
 
