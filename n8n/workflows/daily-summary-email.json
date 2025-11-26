@@ -3,11 +3,12 @@
   "nodes": [
     {
       "parameters": {
-        "rule": {
-          "interval": [
+        "triggerTimes": {
+          "item": [
             {
-              "field": "cronExpression",
-              "cronExpression": "0 8 * * *"
+              "mode": "everyDay",
+              "hour": 8,
+              "minute": 0
             }
           ]
         }
