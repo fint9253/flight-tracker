@@ -121,15 +121,130 @@ public class AmadeusApiClient : IFlightPriceService, IFlightSearchService
         int? maxStops,
         CancellationToken cancellationToken = default)
     {
-        // TODO: Implement route-based price search with date flexibility and stops filter
-        // For now, just call the existing method with the center date
-        _logger.LogWarning("GetRoutePriceAsync is not fully implemented yet. Using simple price lookup as fallback.");
-        return await GetFlightPriceAsync(
-            "ROUTE", // Placeholder - will be replaced with actual route search
-            departureAirportIATA,
-            arrivalAirportIATA,
-            departureDate,
-            cancellationToken);
+        var cacheKey = $"route_price_{departureAirportIATA}_{arrivalAirportIATA}_{departureDate:yyyy-MM-dd}_{dateFlexibilityDays}_{maxStops?.ToString() ?? "any"}";
+
+        // Check cache first
+        if (_cache.TryGetValue<FlightPriceData>(cacheKey, out var cachedData))
+        {
+            _logger.LogDebug("Returning cached route price for {Origin} → {Destination} on {Date} ±{Flex} days",
+                departureAirportIATA, arrivalAirportIATA, departureDate, dateFlexibilityDays);
+            return cachedData;
+        }
+
+        try
+        {
+            _logger.LogInformation("Searching route prices: {Origin} → {Destination} on {Date} ±{Flex} days, max {MaxStops} stops",
+                departureAirportIATA, arrivalAirportIATA, departureDate, dateFlexibilityDays, maxStops?.ToString() ?? "any");
+
+            // Calculate date range
+            var startDate = departureDate.AddDays(-dateFlexibilityDays);
+            var endDate = departureDate.AddDays(dateFlexibilityDays);
+
+            // Get access token
+            var accessToken = await GetAccessTokenAsync(cancellationToken);
+
+            FlightPriceData? cheapestPrice = null;
+
+            // Search each date in the range
+            for (var currentDate = startDate; currentDate <= endDate; currentDate = currentDate.AddDays(1))
+            {
+                var requestUrl = $"/v2/shopping/flight-offers?originLocationCode={departureAirportIATA}" +
+                               $"&destinationLocationCode={arrivalAirportIATA}" +
+                               $"&departureDate={currentDate:yyyy-MM-dd}" +
+                               $"&adults=1" +
+                               $"&max=10"; // Get multiple offers to find best match
+
+                var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+                var response = await _httpClient.SendAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Amadeus API request failed for date {Date}: {StatusCode}",
+                        currentDate, response.StatusCode);
+                    continue;
+                }
+
+                var content = await response.Content.ReadFromJsonAsync<AmadeusFlightOffersResponse>(cancellationToken);
+
+                if (content?.Data == null || content.Data.Count == 0)
+                {
+                    continue;
+                }
+
+                // Filter by stops if specified
+                var filteredOffers = content.Data;
+                if (maxStops.HasValue)
+                {
+                    filteredOffers = content.Data
+                        .Where(offer => {
+                            var stops = offer.Itineraries?.FirstOrDefault()?.Segments?.Count - 1 ?? 0;
+                            return stops <= maxStops.Value;
+                        })
+                        .ToList();
+                }
+
+                if (filteredOffers.Count == 0)
+                {
+                    continue;
+                }
+
+                // Find cheapest offer for this date
+                var cheapestOffer = filteredOffers
+                    .OrderBy(o => decimal.Parse(o.Price.GrandTotal))
+                    .FirstOrDefault();
+
+                if (cheapestOffer != null)
+                {
+                    var price = decimal.Parse(cheapestOffer.Price.GrandTotal);
+                    var stops = cheapestOffer.Itineraries?.FirstOrDefault()?.Segments?.Count - 1 ?? 0;
+
+                    // Update cheapest if this is better
+                    if (cheapestPrice == null || price < cheapestPrice.Price)
+                    {
+                        cheapestPrice = new FlightPriceData
+                        {
+                            Price = price,
+                            Currency = cheapestOffer.Price.Currency,
+                            RetrievedAt = DateTime.UtcNow,
+                            CarrierCode = cheapestOffer.ValidatingAirlineCodes?.FirstOrDefault(),
+                            NumberOfStops = stops
+                        };
+
+                        _logger.LogDebug("Found cheaper option on {Date}: {Price} {Currency} ({Stops} stops)",
+                            currentDate, price, cheapestOffer.Price.Currency, stops);
+                    }
+                }
+            }
+
+            if (cheapestPrice == null)
+            {
+                _logger.LogWarning("No flights found for route {Origin} → {Destination} on {Date} ±{Flex} days with max {MaxStops} stops",
+                    departureAirportIATA, arrivalAirportIATA, departureDate, dateFlexibilityDays, maxStops?.ToString() ?? "any");
+                return null;
+            }
+
+            // Cache the result
+            _cache.Set(cacheKey, cheapestPrice, TimeSpan.FromMinutes(ResponseCacheTtlMinutes));
+
+            _logger.LogInformation("Found cheapest route price: {Origin} → {Destination} = {Price} {Currency} ({Stops} stops)",
+                departureAirportIATA, arrivalAirportIATA, cheapestPrice.Price, cheapestPrice.Currency, cheapestPrice.NumberOfStops);
+
+            return cheapestPrice;
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "HTTP error while fetching route price for {Origin} → {Destination}",
+                departureAirportIATA, arrivalAirportIATA);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching route price for {Origin} → {Destination}",
+                departureAirportIATA, arrivalAirportIATA);
+            throw;
+        }
     }
 
     private async Task<string> GetAccessTokenAsync(CancellationToken cancellationToken)
