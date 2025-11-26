@@ -11,10 +11,11 @@ interface FlightTrackingFormProps {
 export default function FlightTrackingForm({ onSubmit, userId }: FlightTrackingFormProps) {
   const [formData, setFormData] = useState<CreateTrackedFlightRequest>({
     userId,
-    flightNumber: '',
     departureAirportIATA: '',
     arrivalAirportIATA: '',
     departureDate: '',
+    dateFlexibilityDays: 3,
+    maxStops: null,
     notificationThresholdPercent: 5,
     pollingIntervalMinutes: 15,
   });
@@ -35,52 +36,37 @@ export default function FlightTrackingForm({ onSubmit, userId }: FlightTrackingF
       // Reset form
       setFormData({
         userId,
-        flightNumber: '',
         departureAirportIATA: '',
         arrivalAirportIATA: '',
         departureDate: '',
+        dateFlexibilityDays: 3,
+        maxStops: null,
         notificationThresholdPercent: 5,
         pollingIntervalMinutes: 15,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to track flight');
+      setError(err instanceof Error ? err.message : 'Failed to track route');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (field: keyof CreateTrackedFlightRequest, value: string | number) => {
+  const handleChange = (field: keyof CreateTrackedFlightRequest, value: string | number | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   return (
     <div className="flight-tracking-form-container">
-      <h2>Track a Flight</h2>
+      <h2>Track a Route</h2>
       <p className="form-description">
-        Enter flight details to start tracking prices and receive notifications
+        Track the cheapest flights on a route and get notified of price drops
       </p>
 
       <form onSubmit={handleSubmit} className="flight-tracking-form">
         <div className="form-row">
           <div className="form-group">
-            <label htmlFor="flightNumber">
-              Flight Number <span className="required">*</span>
-            </label>
-            <input
-              id="flightNumber"
-              type="text"
-              placeholder="e.g., AA123"
-              value={formData.flightNumber}
-              onChange={(e) => handleChange('flightNumber', e.target.value.toUpperCase())}
-              required
-              pattern="^[A-Z]{2}\d+$"
-              title="Format: 2 letters followed by numbers (e.g., AA123)"
-            />
-          </div>
-
-          <div className="form-group">
             <label htmlFor="departureDate">
-              Departure Date <span className="required">*</span>
+              Departure Date (±{formData.dateFlexibilityDays} days) <span className="required">*</span>
             </label>
             <input
               id="departureDate"
@@ -90,6 +76,23 @@ export default function FlightTrackingForm({ onSubmit, userId }: FlightTrackingF
               min={new Date().toISOString().split('T')[0]}
               required
             />
+            <small>We'll search {formData.dateFlexibilityDays} days before and after this date</small>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="maxStops">
+              Maximum Stops
+            </label>
+            <select
+              id="maxStops"
+              value={formData.maxStops === null ? 'any' : formData.maxStops}
+              onChange={(e) => handleChange('maxStops', e.target.value === 'any' ? null : Number(e.target.value))}
+            >
+              <option value="any">Any number of stops</option>
+              <option value="0">Direct flights only</option>
+              <option value="1">1 stop maximum</option>
+              <option value="2">2 stops maximum</option>
+            </select>
           </div>
         </div>
 
@@ -169,12 +172,12 @@ export default function FlightTrackingForm({ onSubmit, userId }: FlightTrackingF
 
         {success && (
           <div className="alert alert-success">
-            Flight tracking started successfully!
+            Route tracking started successfully!
           </div>
         )}
 
         <button type="submit" disabled={loading} className="submit-button">
-          {loading ? 'Starting Tracking...' : 'Start Tracking Flight'}
+          {loading ? 'Starting Tracking...' : 'Start Tracking Route'}
         </button>
       </form>
     </div>

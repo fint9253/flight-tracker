@@ -1,10 +1,11 @@
 export interface TrackedFlight {
   id: string;
   userId: string;
-  flightNumber: string;
   departureAirportIATA: string;
   arrivalAirportIATA: string;
   departureDate: string;
+  dateFlexibilityDays: number;
+  maxStops: number | null;
   notificationThresholdPercent: number;
   pollingIntervalMinutes: number;
   isActive: boolean;
@@ -45,10 +46,11 @@ export interface FlightSearchResult {
 
 export interface CreateTrackedFlightRequest {
   userId: string;
-  flightNumber: string;
   departureAirportIATA: string;
   arrivalAirportIATA: string;
   departureDate: string;
+  dateFlexibilityDays?: number;
+  maxStops?: number | null;
   notificationThresholdPercent?: number;
   pollingIntervalMinutes?: number;
 }
@@ -77,8 +79,9 @@ export interface RouteGroup {
 
 export interface RouteFlight {
   id: string;
-  flightNumber: string;
   departureDate: string;
+  dateFlexibilityDays: number;
+  maxStops: number | null;
   notificationThresholdPercent: number;
   isActive: boolean;
   lastPolledAt: string | null;
