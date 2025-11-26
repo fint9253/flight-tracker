@@ -34,7 +34,7 @@ export default function TrackedFlightsList({ userId, onFlightDeleted }: TrackedF
   }, [userId]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to stop tracking this flight?')) {
+    if (!confirm('Are you sure you want to stop tracking this route?')) {
       return;
     }
 
@@ -43,7 +43,7 @@ export default function TrackedFlightsList({ userId, onFlightDeleted }: TrackedF
       setFlights(prev => prev.filter(f => f.id !== id));
       onFlightDeleted?.();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete flight');
+      alert(err instanceof Error ? err.message : 'Failed to delete route');
     }
   };
 
@@ -52,7 +52,7 @@ export default function TrackedFlightsList({ userId, onFlightDeleted }: TrackedF
       const updated = await flightTrackingApi.updateTrackedFlight(id, { isActive });
       setFlights(prev => prev.map(f => f.id === id ? updated : f));
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to update flight');
+      alert(err instanceof Error ? err.message : 'Failed to update route');
     }
   };
 
@@ -86,8 +86,8 @@ export default function TrackedFlightsList({ userId, onFlightDeleted }: TrackedF
     return (
       <div className="tracked-flights-list">
         <div className="empty-state">
-          <h3>No flights tracked yet</h3>
-          <p>Start tracking a flight above to get price alerts!</p>
+          <h3>No routes tracked yet</h3>
+          <p>Start tracking a route above to get price alerts!</p>
         </div>
       </div>
     );
@@ -99,7 +99,7 @@ export default function TrackedFlightsList({ userId, onFlightDeleted }: TrackedF
   return (
     <div className="tracked-flights-list">
       <div className="list-header">
-        <h2>Your Tracked Flights</h2>
+        <h2>Your Tracked Routes</h2>
         <div className="stats">
           <span className="stat">
             <strong>{flights.length}</strong> total
@@ -144,12 +144,18 @@ export default function TrackedFlightsList({ userId, onFlightDeleted }: TrackedF
         </section>
       )}
 
-      {selectedFlightId && (
-        <PriceHistoryChart
-          flightId={selectedFlightId}
-          flightNumber={flights.find(f => f.id === selectedFlightId)?.flightNumber || 'Unknown'}
-        />
-      )}
+      {selectedFlightId && (() => {
+        const flight = flights.find(f => f.id === selectedFlightId);
+        const routeLabel = flight
+          ? `${flight.departureAirportIATA} → ${flight.arrivalAirportIATA}`
+          : 'Unknown Route';
+        return (
+          <PriceHistoryChart
+            flightId={selectedFlightId}
+            routeLabel={routeLabel}
+          />
+        );
+      })()}
     </div>
   );
 }

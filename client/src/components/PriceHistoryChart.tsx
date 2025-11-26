@@ -15,7 +15,7 @@ import './PriceHistoryChart.css';
 
 interface PriceHistoryChartProps {
   flightId: string;
-  flightNumber: string;
+  routeLabel: string;
 }
 
 interface ChartDataPoint {
@@ -33,7 +33,7 @@ interface PriceStats {
   priceChangePercent: number;
 }
 
-export default function PriceHistoryChart({ flightId, flightNumber }: PriceHistoryChartProps) {
+export default function PriceHistoryChart({ flightId, routeLabel }: PriceHistoryChartProps) {
   const [priceHistory, setPriceHistory] = useState<PriceHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -111,7 +111,7 @@ export default function PriceHistoryChart({ flightId, flightNumber }: PriceHisto
     return (
       <div className="price-history-chart">
         <div className="chart-header">
-          <h3>Price History - {flightNumber}</h3>
+          <h3>Price History - {routeLabel}</h3>
         </div>
         <div className="loading-state">
           <div className="spinner"></div>
@@ -125,7 +125,7 @@ export default function PriceHistoryChart({ flightId, flightNumber }: PriceHisto
     return (
       <div className="price-history-chart">
         <div className="chart-header">
-          <h3>Price History - {flightNumber}</h3>
+          <h3>Price History - {routeLabel}</h3>
         </div>
         <div className="error-state">
           <p className="error-message">{error}</p>
@@ -138,7 +138,7 @@ export default function PriceHistoryChart({ flightId, flightNumber }: PriceHisto
     return (
       <div className="price-history-chart">
         <div className="chart-header">
-          <h3>Price History - {flightNumber}</h3>
+          <h3>Price History - {routeLabel}</h3>
         </div>
         <div className="empty-state">
           <p>No price history available yet. Check back after the first price check.</p>
@@ -150,7 +150,7 @@ export default function PriceHistoryChart({ flightId, flightNumber }: PriceHisto
   return (
     <div className="price-history-chart">
       <div className="chart-header">
-        <h3>Price History - {flightNumber}</h3>
+        <h3>Price History - {routeLabel}</h3>
         {stats && (
           <div className="price-stats">
             <div className="stat-item">

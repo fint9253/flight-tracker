@@ -16,6 +16,12 @@ export default function FlightCard({ flight, onDelete, onToggleActive, onViewHis
     year: 'numeric',
   });
 
+  const getStopsLabel = (maxStops: number | null): string => {
+    if (maxStops === null) return 'Any stops';
+    if (maxStops === 0) return 'Direct only';
+    return `Max ${maxStops} stop${maxStops > 1 ? 's' : ''}`;
+  };
+
   return (
     <div className={`flight-card ${!flight.isActive ? 'inactive' : ''} ${isPastFlight ? 'past' : ''}`}>
       <div className="flight-card-header">
@@ -24,14 +30,17 @@ export default function FlightCard({ flight, onDelete, onToggleActive, onViewHis
           <span className="arrow">→</span>
           <span className="airport">{flight.arrivalAirportIATA}</span>
         </div>
-        <span className="flight-number">{flight.flightNumber}</span>
       </div>
 
       <div className="flight-card-body">
         <div className="flight-info">
           <div className="info-item">
             <span className="label">Departure</span>
-            <span className="value">{formattedDate}</span>
+            <span className="value">{formattedDate} ±{flight.dateFlexibilityDays}d</span>
+          </div>
+          <div className="info-item">
+            <span className="label">Stops</span>
+            <span className="value">{getStopsLabel(flight.maxStops)}</span>
           </div>
           <div className="info-item">
             <span className="label">Alert Threshold</span>
