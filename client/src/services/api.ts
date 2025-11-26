@@ -65,7 +65,7 @@ export const flightTrackingApi = {
 
   // Get price history for a tracked flight
   getPriceHistory: async (id: string): Promise<PriceHistory[]> => {
-    const response = await api.get<PriceHistory[]>(`/tracking/${id}/price-history`);
+    const response = await api.get<PriceHistory[]>(`/tracking/${id}/history`);
     return response.data;
   },
 
