@@ -113,6 +113,25 @@ public class AmadeusApiClient : IFlightPriceService, IFlightSearchService
         }
     }
 
+    public async Task<FlightPriceData?> GetRoutePriceAsync(
+        string departureAirportIATA,
+        string arrivalAirportIATA,
+        DateOnly departureDate,
+        int dateFlexibilityDays,
+        int? maxStops,
+        CancellationToken cancellationToken = default)
+    {
+        // TODO: Implement route-based price search with date flexibility and stops filter
+        // For now, just call the existing method with the center date
+        _logger.LogWarning("GetRoutePriceAsync is not fully implemented yet. Using simple price lookup as fallback.");
+        return await GetFlightPriceAsync(
+            "ROUTE", // Placeholder - will be replaced with actual route search
+            departureAirportIATA,
+            arrivalAirportIATA,
+            departureDate,
+            cancellationToken);
+    }
+
     private async Task<string> GetAccessTokenAsync(CancellationToken cancellationToken)
     {
         // Check cache first

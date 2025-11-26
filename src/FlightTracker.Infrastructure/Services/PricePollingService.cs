@@ -77,8 +77,8 @@ public class PricePollingService : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex,
-                    "Error polling flight {FlightId} ({FlightNumber} from {Origin} to {Destination} on {Date})",
-                    flight.Id, flight.FlightNumber, flight.DepartureAirportIATA,
+                    "Error polling route {FlightId} ({Origin} → {Destination} on {Date})",
+                    flight.Id, flight.DepartureAirportIATA,
                     flight.ArrivalAirportIATA, flight.DepartureDate);
             }
         }
@@ -93,23 +93,25 @@ public class PricePollingService : BackgroundService
         CancellationToken cancellationToken)
     {
         _logger.LogInformation(
-            "Polling flight {FlightId} ({FlightNumber} from {Origin} to {Destination} on {Date})",
-            flight.Id, flight.FlightNumber, flight.DepartureAirportIATA,
-            flight.ArrivalAirportIATA, flight.DepartureDate);
+            "Polling route {FlightId} ({Origin} → {Destination} on {Date}, ±{Flex} days, max {MaxStops} stops)",
+            flight.Id, flight.DepartureAirportIATA,
+            flight.ArrivalAirportIATA, flight.DepartureDate, flight.DateFlexibilityDays,
+            flight.MaxStops?.ToString() ?? "any");
 
-        // Fetch current price from API
-        var priceData = await flightPriceService.GetFlightPriceAsync(
-            flight.FlightNumber,
+        // Fetch current price from API (route-based search)
+        var priceData = await flightPriceService.GetRoutePriceAsync(
             flight.DepartureAirportIATA,
             flight.ArrivalAirportIATA,
             flight.DepartureDate,
+            flight.DateFlexibilityDays,
+            flight.MaxStops,
             cancellationToken);
 
         if (priceData == null)
         {
             _logger.LogWarning(
-                "No price data available for flight {FlightId} ({FlightNumber})",
-                flight.Id, flight.FlightNumber);
+                "No price data available for route {FlightId} ({Origin} → {Destination})",
+                flight.Id, flight.DepartureAirportIATA, flight.ArrivalAirportIATA);
 
             // Update LastPolledAt even if no data found
             flight.LastPolledAt = DateTime.UtcNow;
@@ -118,8 +120,8 @@ public class PricePollingService : BackgroundService
         }
 
         _logger.LogInformation(
-            "Flight {FlightId} ({FlightNumber}) current price: {Price} {Currency}",
-            flight.Id, flight.FlightNumber, priceData.Price, priceData.Currency);
+            "Route {FlightId} ({Origin} → {Destination}) current price: {Price} {Currency}",
+            flight.Id, flight.DepartureAirportIATA, flight.ArrivalAirportIATA, priceData.Price, priceData.Currency);
 
         // Store price in history
         var priceHistory = new PriceHistory
@@ -147,9 +149,9 @@ public class PricePollingService : BackgroundService
             var percentageChange = ((priceData.Price - averagePrice) / averagePrice) * 100;
 
             _logger.LogInformation(
-                "Price alert triggered for flight {FlightId} ({FlightNumber}): " +
+                "Price alert triggered for route {FlightId} ({Origin} → {Destination}): " +
                 "Current {CurrentPrice} is {PercentageChange:F2}% below average {AveragePrice} (threshold: {Threshold}%)",
-                flight.Id, flight.FlightNumber, priceData.Price, percentageChange,
+                flight.Id, flight.DepartureAirportIATA, flight.ArrivalAirportIATA, priceData.Price, percentageChange,
                 averagePrice, flight.NotificationThresholdPercent);
 
             var alert = new PriceAlert

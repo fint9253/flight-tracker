@@ -4,10 +4,11 @@ public class TrackedFlight
 {
     public Guid Id { get; set; }
     public string UserId { get; set; } = string.Empty;
-    public string FlightNumber { get; set; } = string.Empty;
     public string DepartureAirportIATA { get; set; } = string.Empty;
     public string ArrivalAirportIATA { get; set; } = string.Empty;
     public DateOnly DepartureDate { get; set; }
+    public int DateFlexibilityDays { get; set; } = 3; // ±3 days
+    public int? MaxStops { get; set; } // null = any, 0 = direct, 1 = 1 stop, 2+ = 2+ stops
     public decimal NotificationThresholdPercent { get; set; } = 5.00m;
     public int PollingIntervalMinutes { get; set; } = 15;
     public bool IsActive { get; set; } = true;

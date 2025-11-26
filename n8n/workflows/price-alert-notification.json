@@ -27,22 +27,28 @@
     },
     {
       "parameters": {
-        "authentication": "generic",
-        "fromEmail": "={{$env.GMAIL_ADDRESS}}",
-        "toEmail": "={{$json.recipients}}",
-        "subject": "={{$json.subject}}",
-        "emailFormat": "html",
-        "message": "={{$json.emailBody}}",
+        "resource": "message",
+        "operation": "send",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.emailBody }}",
+        "toList": {
+          "values": [
+            {
+              "address": "={{ $json.recipients }}"
+            }
+          ]
+        },
         "options": {}
       },
       "id": "send-email",
       "name": "Send Email (Gmail)",
-      "type": "n8n-nodes-base.emailSend",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
       "position": [650, 300],
       "credentials": {
         "gmailOAuth2": {
-          "id": "gmail-credentials",
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
           "name": "Gmail OAuth2"
         }
       }

@@ -43,11 +43,32 @@ services:
       WEBHOOK_URL: http://localhost:5678/
       # Generic timezone
       GENERIC_TIMEZONE: ${TIMEZONE:-America/New_York}
+      # App-specific environment variables
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GMAIL_ADDRESS: ${GMAIL_ADDRESS}
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
       - n8n_data:/home/node/.n8n
+    networks:
+      - flight-tracker-network
+
+  # .NET API
+  api:
+    build:
+      context: ./src
+      dockerfile: FlightTracker.Api/Dockerfile
+    container_name: flight-tracker-api
+    ports:
+      - "5000:5000"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:5000
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=flighttracker;Username=postgres;Password=${POSTGRES_PASSWORD}"
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - flight-tracker-network
 

@@ -28,10 +28,6 @@ public class FlightTrackerDbContext : DbContext
                 .IsRequired()
                 .HasMaxLength(255);
 
-            entity.Property(e => e.FlightNumber)
-                .IsRequired()
-                .HasMaxLength(20);
-
             entity.Property(e => e.DepartureAirportIATA)
                 .IsRequired()
                 .HasMaxLength(3);
