@@ -79,10 +79,11 @@ public class TrackedFlightsController : ControllerBase
             Flights = request.Flights.Select(f => new FlightToTrack
             {
                 UserId = f.UserId,
-                FlightNumber = f.FlightNumber,
                 DepartureAirportIATA = f.DepartureAirportIATA,
                 ArrivalAirportIATA = f.ArrivalAirportIATA,
                 DepartureDate = f.DepartureDate,
+                DateFlexibilityDays = f.DateFlexibilityDays,
+                MaxStops = f.MaxStops,
                 NotificationThresholdPercent = f.NotificationThresholdPercent,
                 PollingIntervalMinutes = f.PollingIntervalMinutes
             }).ToList()
@@ -100,7 +101,7 @@ public class TrackedFlightsController : ControllerBase
                 Index = r.Index,
                 Success = r.Success,
                 FlightId = r.FlightId,
-                FlightNumber = r.FlightNumber,
+                Route = r.Route,
                 ErrorMessage = r.ErrorMessage
             }).ToList()
         };
@@ -126,10 +127,11 @@ public class TrackedFlightsController : ControllerBase
         var command = new CreateTrackedFlightCommand
         {
             UserId = request.UserId,
-            FlightNumber = request.FlightNumber,
             DepartureAirportIATA = request.DepartureAirportIATA,
             ArrivalAirportIATA = request.ArrivalAirportIATA,
             DepartureDate = request.DepartureDate,
+            DateFlexibilityDays = request.DateFlexibilityDays,
+            MaxStops = request.MaxStops,
             NotificationThresholdPercent = request.NotificationThresholdPercent,
             PollingIntervalMinutes = request.PollingIntervalMinutes
         };
@@ -140,10 +142,11 @@ public class TrackedFlightsController : ControllerBase
         {
             Id = result.Id,
             UserId = result.UserId,
-            FlightNumber = result.FlightNumber,
             DepartureAirportIATA = result.DepartureAirportIATA,
             ArrivalAirportIATA = result.ArrivalAirportIATA,
             DepartureDate = result.DepartureDate,
+            DateFlexibilityDays = result.DateFlexibilityDays,
+            MaxStops = result.MaxStops,
             NotificationThresholdPercent = result.NotificationThresholdPercent,
             PollingIntervalMinutes = result.PollingIntervalMinutes,
             IsActive = result.IsActive,
@@ -177,10 +180,11 @@ public class TrackedFlightsController : ControllerBase
         {
             Id = r.Id,
             UserId = r.UserId,
-            FlightNumber = r.FlightNumber,
             DepartureAirportIATA = r.DepartureAirportIATA,
             ArrivalAirportIATA = r.ArrivalAirportIATA,
             DepartureDate = r.DepartureDate,
+            DateFlexibilityDays = r.DateFlexibilityDays,
+            MaxStops = r.MaxStops,
             NotificationThresholdPercent = r.NotificationThresholdPercent,
             PollingIntervalMinutes = r.PollingIntervalMinutes,
             IsActive = r.IsActive,
@@ -236,8 +240,9 @@ public class TrackedFlightsController : ControllerBase
                 NextUpcomingFlight = g.NextUpcomingFlight != null ? new RouteFlightResponse
                 {
                     Id = g.NextUpcomingFlight.Id,
-                    FlightNumber = g.NextUpcomingFlight.FlightNumber,
                     DepartureDate = g.NextUpcomingFlight.DepartureDate,
+                    DateFlexibilityDays = g.NextUpcomingFlight.DateFlexibilityDays,
+                    MaxStops = g.NextUpcomingFlight.MaxStops,
                     NotificationThresholdPercent = g.NextUpcomingFlight.NotificationThresholdPercent,
                     IsActive = g.NextUpcomingFlight.IsActive,
                     LastPolledAt = g.NextUpcomingFlight.LastPolledAt
@@ -245,8 +250,9 @@ public class TrackedFlightsController : ControllerBase
                 Flights = g.Flights.Select(f => new RouteFlightResponse
                 {
                     Id = f.Id,
-                    FlightNumber = f.FlightNumber,
                     DepartureDate = f.DepartureDate,
+                    DateFlexibilityDays = f.DateFlexibilityDays,
+                    MaxStops = f.MaxStops,
                     NotificationThresholdPercent = f.NotificationThresholdPercent,
                     IsActive = f.IsActive,
                     LastPolledAt = f.LastPolledAt
@@ -284,10 +290,11 @@ public class TrackedFlightsController : ControllerBase
         {
             Id = result.Id,
             UserId = result.UserId,
-            FlightNumber = result.FlightNumber,
             DepartureAirportIATA = result.DepartureAirportIATA,
             ArrivalAirportIATA = result.ArrivalAirportIATA,
             DepartureDate = result.DepartureDate,
+            DateFlexibilityDays = result.DateFlexibilityDays,
+            MaxStops = result.MaxStops,
             NotificationThresholdPercent = result.NotificationThresholdPercent,
             PollingIntervalMinutes = result.PollingIntervalMinutes,
             IsActive = result.IsActive,
@@ -345,10 +352,11 @@ public class TrackedFlightsController : ControllerBase
         {
             Id = result.Id,
             UserId = result.UserId,
-            FlightNumber = result.FlightNumber,
             DepartureAirportIATA = result.DepartureAirportIATA,
             ArrivalAirportIATA = result.ArrivalAirportIATA,
             DepartureDate = result.DepartureDate,
+            DateFlexibilityDays = result.DateFlexibilityDays,
+            MaxStops = result.MaxStops,
             NotificationThresholdPercent = result.NotificationThresholdPercent,
             PollingIntervalMinutes = result.PollingIntervalMinutes,
             IsActive = result.IsActive,

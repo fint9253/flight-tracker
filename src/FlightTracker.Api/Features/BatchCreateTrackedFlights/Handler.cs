@@ -37,10 +37,11 @@ public class BatchCreateTrackedFlightsHandler : IRequestHandler<BatchCreateTrack
                 var flight = new TrackedFlight
                 {
                     UserId = flightRequest.UserId,
-                    FlightNumber = flightRequest.FlightNumber,
                     DepartureAirportIATA = flightRequest.DepartureAirportIATA,
                     ArrivalAirportIATA = flightRequest.ArrivalAirportIATA,
                     DepartureDate = flightRequest.DepartureDate,
+                    DateFlexibilityDays = flightRequest.DateFlexibilityDays,
+                    MaxStops = flightRequest.MaxStops,
                     NotificationThresholdPercent = flightRequest.NotificationThresholdPercent,
                     PollingIntervalMinutes = flightRequest.PollingIntervalMinutes,
                     IsActive = true,
@@ -55,7 +56,7 @@ public class BatchCreateTrackedFlightsHandler : IRequestHandler<BatchCreateTrack
                     Index = i,
                     Success = true,
                     FlightId = created.Id,
-                    FlightNumber = created.FlightNumber
+                    Route = $"{created.DepartureAirportIATA} → {created.ArrivalAirportIATA}"
                 });
 
                 successCount++;
@@ -70,15 +71,15 @@ public class BatchCreateTrackedFlightsHandler : IRequestHandler<BatchCreateTrack
                 {
                     Index = i,
                     Success = false,
-                    FlightNumber = flightRequest.FlightNumber,
+                    Route = $"{flightRequest.DepartureAirportIATA} → {flightRequest.ArrivalAirportIATA}",
                     ErrorMessage = ex.Message
                 });
 
                 failureCount++;
 
                 _logger.LogError(ex,
-                    "Batch item {Index}: Failed to create tracked flight {FlightNumber} for user {UserId}",
-                    i, flightRequest.FlightNumber, flightRequest.UserId);
+                    "Batch item {Index}: Failed to create tracked flight {Origin} → {Destination} for user {UserId}",
+                    i, flightRequest.DepartureAirportIATA, flightRequest.ArrivalAirportIATA, flightRequest.UserId);
             }
         }
 

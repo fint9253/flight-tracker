@@ -54,10 +54,11 @@ public class UpdateTrackedFlightHandler : IRequestHandler<UpdateTrackedFlightCom
         {
             Id = flight.Id,
             UserId = flight.UserId,
-            FlightNumber = flight.FlightNumber,
             DepartureAirportIATA = flight.DepartureAirportIATA,
             ArrivalAirportIATA = flight.ArrivalAirportIATA,
             DepartureDate = flight.DepartureDate,
+            DateFlexibilityDays = flight.DateFlexibilityDays,
+            MaxStops = flight.MaxStops,
             NotificationThresholdPercent = flight.NotificationThresholdPercent,
             PollingIntervalMinutes = flight.PollingIntervalMinutes,
             IsActive = flight.IsActive,

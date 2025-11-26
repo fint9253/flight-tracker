@@ -24,8 +24,9 @@ public record RouteGroupDto
 public record RouteFlightDto
 {
     public Guid Id { get; init; }
-    public string FlightNumber { get; init; } = string.Empty;
     public DateOnly DepartureDate { get; init; }
+    public int DateFlexibilityDays { get; init; }
+    public int? MaxStops { get; init; }
     public decimal NotificationThresholdPercent { get; init; }
     public bool IsActive { get; init; }
     public DateTime? LastPolledAt { get; init; }

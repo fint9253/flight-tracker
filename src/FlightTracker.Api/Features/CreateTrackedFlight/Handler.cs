@@ -25,10 +25,11 @@ public class CreateTrackedFlightHandler : IRequestHandler<CreateTrackedFlightCom
         var flight = new TrackedFlight
         {
             UserId = request.UserId,
-            FlightNumber = request.FlightNumber,
             DepartureAirportIATA = request.DepartureAirportIATA,
             ArrivalAirportIATA = request.ArrivalAirportIATA,
             DepartureDate = request.DepartureDate,
+            DateFlexibilityDays = request.DateFlexibilityDays,
+            MaxStops = request.MaxStops,
             NotificationThresholdPercent = request.NotificationThresholdPercent,
             PollingIntervalMinutes = request.PollingIntervalMinutes,
             IsActive = true,
@@ -39,18 +40,20 @@ public class CreateTrackedFlightHandler : IRequestHandler<CreateTrackedFlightCom
         var created = await _repository.AddAsync(flight, cancellationToken);
 
         _logger.LogInformation(
-            "Created tracked flight {FlightId} for user {UserId}: {FlightNumber} from {Origin} to {Destination} on {Date}",
-            created.Id, created.UserId, created.FlightNumber,
-            created.DepartureAirportIATA, created.ArrivalAirportIATA, created.DepartureDate);
+            "Created tracked flight {FlightId} for user {UserId}: {Origin} → {Destination} on {Date} ±{Flex} days, max {MaxStops} stops",
+            created.Id, created.UserId,
+            created.DepartureAirportIATA, created.ArrivalAirportIATA, created.DepartureDate,
+            created.DateFlexibilityDays, created.MaxStops?.ToString() ?? "any");
 
         return new CreateTrackedFlightResult
         {
             Id = created.Id,
             UserId = created.UserId,
-            FlightNumber = created.FlightNumber,
             DepartureAirportIATA = created.DepartureAirportIATA,
             ArrivalAirportIATA = created.ArrivalAirportIATA,
             DepartureDate = created.DepartureDate,
+            DateFlexibilityDays = created.DateFlexibilityDays,
+            MaxStops = created.MaxStops,
             NotificationThresholdPercent = created.NotificationThresholdPercent,
             PollingIntervalMinutes = created.PollingIntervalMinutes,
             IsActive = created.IsActive,

@@ -33,8 +33,9 @@ public class GetTrackedFlightsByRouteHandler : IRequestHandler<GetTrackedFlights
                 var flightDtos = g.Select(f => new RouteFlightDto
                 {
                     Id = f.Id,
-                    FlightNumber = f.FlightNumber,
                     DepartureDate = f.DepartureDate,
+                    DateFlexibilityDays = f.DateFlexibilityDays,
+                    MaxStops = f.MaxStops,
                     NotificationThresholdPercent = f.NotificationThresholdPercent,
                     IsActive = f.IsActive,
                     LastPolledAt = f.LastPolledAt
@@ -50,9 +51,9 @@ public class GetTrackedFlightsByRouteHandler : IRequestHandler<GetTrackedFlights
                     Route = $"{g.Key.DepartureAirportIATA} → {g.Key.ArrivalAirportIATA}",
                     DepartureAirportIATA = g.Key.DepartureAirportIATA,
                     ArrivalAirportIATA = g.Key.ArrivalAirportIATA,
-                    FlightCount = flightDtos.Count,
+                    FlightCount = flightDtos.Count(),
                     ActiveFlightCount = activeCount,
-                    InactiveFlightCount = flightDtos.Count - activeCount,
+                    InactiveFlightCount = flightDtos.Count() - activeCount,
                     EarliestDepartureDate = flightDtos.Min(f => f.DepartureDate),
                     LatestDepartureDate = flightDtos.Max(f => f.DepartureDate),
                     NextUpcomingFlight = nextFlight,

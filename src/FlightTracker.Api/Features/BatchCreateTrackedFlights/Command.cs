@@ -10,10 +10,11 @@ public record BatchCreateTrackedFlightsCommand : IRequest<BatchCreateTrackedFlig
 public record FlightToTrack
 {
     public string UserId { get; init; } = string.Empty;
-    public string FlightNumber { get; init; } = string.Empty;
     public string DepartureAirportIATA { get; init; } = string.Empty;
     public string ArrivalAirportIATA { get; init; } = string.Empty;
     public DateOnly DepartureDate { get; init; }
+    public int DateFlexibilityDays { get; init; } = 3;
+    public int? MaxStops { get; init; }
     public decimal NotificationThresholdPercent { get; init; } = 5.00m;
     public int PollingIntervalMinutes { get; init; } = 15;
 }
@@ -31,6 +32,6 @@ public record BatchFlightResult
     public int Index { get; init; }
     public bool Success { get; init; }
     public Guid? FlightId { get; init; }
-    public string? FlightNumber { get; init; }
+    public string? Route { get; init; }
     public string? ErrorMessage { get; init; }
 }

@@ -11,10 +11,11 @@ public record TrackedFlightResult
 {
     public Guid Id { get; init; }
     public string UserId { get; init; } = string.Empty;
-    public string FlightNumber { get; init; } = string.Empty;
     public string DepartureAirportIATA { get; init; } = string.Empty;
     public string ArrivalAirportIATA { get; init; } = string.Empty;
     public DateOnly DepartureDate { get; init; }
+    public int DateFlexibilityDays { get; init; }
+    public int? MaxStops { get; init; }
     public decimal NotificationThresholdPercent { get; init; }
     public int PollingIntervalMinutes { get; init; }
     public bool IsActive { get; init; }

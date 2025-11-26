@@ -16,10 +16,11 @@ public record SearchFlightsRequest
 public record CreateTrackedFlightRequest
 {
     public string UserId { get; init; } = string.Empty;
-    public string FlightNumber { get; init; } = string.Empty;
     public string DepartureAirportIATA { get; init; } = string.Empty;
     public string ArrivalAirportIATA { get; init; } = string.Empty;
     public DateOnly DepartureDate { get; init; }
+    public int DateFlexibilityDays { get; init; } = 3;
+    public int? MaxStops { get; init; }
     public decimal NotificationThresholdPercent { get; init; } = 5.00m;
     public int PollingIntervalMinutes { get; init; } = 15;
 }
@@ -52,10 +53,11 @@ public record TrackedFlightResponse
 {
     public Guid Id { get; init; }
     public string UserId { get; init; } = string.Empty;
-    public string FlightNumber { get; init; } = string.Empty;
     public string DepartureAirportIATA { get; init; } = string.Empty;
     public string ArrivalAirportIATA { get; init; } = string.Empty;
     public DateOnly DepartureDate { get; init; }
+    public int DateFlexibilityDays { get; init; }
+    public int? MaxStops { get; init; }
     public decimal NotificationThresholdPercent { get; init; }
     public int PollingIntervalMinutes { get; init; }
     public bool IsActive { get; init; }
@@ -95,7 +97,7 @@ public record BatchFlightItemResponse
     public int Index { get; init; }
     public bool Success { get; init; }
     public Guid? FlightId { get; init; }
-    public string? FlightNumber { get; init; }
+    public string? Route { get; init; }
     public string? ErrorMessage { get; init; }
 }
 
@@ -124,8 +126,9 @@ public record RouteGroupResponse
 public record RouteFlightResponse
 {
     public Guid Id { get; init; }
-    public string FlightNumber { get; init; } = string.Empty;
     public DateOnly DepartureDate { get; init; }
+    public int DateFlexibilityDays { get; init; }
+    public int? MaxStops { get; init; }
     public decimal NotificationThresholdPercent { get; init; }
     public bool IsActive { get; init; }
     public DateTime? LastPolledAt { get; init; }
@@ -140,12 +143,6 @@ public class CreateTrackedFlightValidator : AbstractValidator<CreateTrackedFligh
         RuleFor(x => x.UserId)
             .NotEmpty()
             .MaximumLength(255);
-
-        RuleFor(x => x.FlightNumber)
-            .NotEmpty()
-            .MaximumLength(20)
-            .Matches(@"^[A-Z]{2}\d+$")
-            .WithMessage("Flight number must be in format: 2 letters followed by numbers (e.g., AA123)");
 
         RuleFor(x => x.DepartureAirportIATA)
             .NotEmpty()
@@ -162,6 +159,17 @@ public class CreateTrackedFlightValidator : AbstractValidator<CreateTrackedFligh
         RuleFor(x => x.DepartureDate)
             .GreaterThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow))
             .WithMessage("Departure date must be today or in the future");
+
+        RuleFor(x => x.DateFlexibilityDays)
+            .GreaterThanOrEqualTo(0)
+            .LessThanOrEqualTo(7)
+            .WithMessage("Date flexibility must be between 0 and 7 days");
+
+        RuleFor(x => x.MaxStops)
+            .GreaterThanOrEqualTo(0)
+            .LessThanOrEqualTo(3)
+            .When(x => x.MaxStops.HasValue)
+            .WithMessage("Max stops must be between 0 and 3");
 
         RuleFor(x => x.NotificationThresholdPercent)
             .GreaterThan(0)
