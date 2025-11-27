@@ -45,7 +45,7 @@ public class TrackedFlightRepository : ITrackedFlightRepository
         return await _context.TrackedFlights
             .Where(f => f.IsActive &&
                        (f.LastPolledAt == null ||
-                        f.LastPolledAt.Value.AddMinutes(f.PollingIntervalMinutes) <= currentTime))
+                        f.LastPolledAt.Value.AddHours(f.PollingIntervalHours) <= currentTime))
             .ToListAsync(cancellationToken);
     }
 

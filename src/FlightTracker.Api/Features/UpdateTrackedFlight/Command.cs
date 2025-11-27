@@ -7,6 +7,6 @@ public record UpdateTrackedFlightCommand : IRequest<TrackedFlightResult?>
 {
     public Guid Id { get; init; }
     public decimal? NotificationThresholdPercent { get; init; }
-    public int? PollingIntervalMinutes { get; init; }
+    public int? PollingIntervalHours { get; init; }
     public bool? IsActive { get; init; }
 }

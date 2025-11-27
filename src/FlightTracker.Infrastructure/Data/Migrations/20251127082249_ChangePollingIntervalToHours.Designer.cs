@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FlightTracker.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(FlightTrackerDbContext))]
-    [Migration("20251124202527_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251127082249_ChangePollingIntervalToHours")]
+    partial class ChangePollingIntervalToHours
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -154,6 +154,9 @@ namespace FlightTracker.Infrastructure.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("DateFlexibilityDays")
+                        .HasColumnType("integer");
+
                     b.Property<string>("DepartureAirportIATA")
                         .IsRequired()
                         .HasMaxLength(3)
@@ -162,16 +165,14 @@ namespace FlightTracker.Infrastructure.Data.Migrations
                     b.Property<DateOnly>("DepartureDate")
                         .HasColumnType("date");
 
-                    b.Property<string>("FlightNumber")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
                     b.Property<DateTime?>("LastPolledAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("MaxStops")
+                        .HasColumnType("integer");
 
                     b.Property<decimal>("NotificationThresholdPercent")
                         .HasPrecision(5, 2)

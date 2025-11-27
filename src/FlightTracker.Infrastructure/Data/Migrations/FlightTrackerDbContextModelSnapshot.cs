@@ -175,7 +175,7 @@ namespace FlightTracker.Infrastructure.Data.Migrations
                         .HasPrecision(5, 2)
                         .HasColumnType("numeric(5,2)");
 
-                    b.Property<int>("PollingIntervalMinutes")
+                    b.Property<int>("PollingIntervalHours")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")

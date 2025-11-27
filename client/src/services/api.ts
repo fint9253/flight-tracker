@@ -15,6 +15,35 @@ const api = axios.create({
   },
 });
 
+// Global token getter function (will be set by App.tsx)
+let getTokenFunction: (() => Promise<string | null>) | null = null;
+
+// Function to configure the API client with Clerk's token getter
+export const configureApiClient = (getToken: () => Promise<string | null>) => {
+  getTokenFunction = getToken;
+};
+
+// Request interceptor to add Clerk JWT token to all requests
+api.interceptors.request.use(
+  async (config) => {
+    if (getTokenFunction) {
+      try {
+        const token = await getTokenFunction();
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      } catch (error) {
+        console.error('Failed to get auth token:', error);
+      }
+    }
+
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Flight Tracking API
 export const flightTrackingApi = {
   // Create a new tracked flight
@@ -50,7 +79,7 @@ export const flightTrackingApi = {
     id: string,
     data: {
       notificationThresholdPercent?: number;
-      pollingIntervalMinutes?: number;
+      pollingIntervalHours?: number;
       isActive?: boolean;
     }
   ): Promise<TrackedFlight> => {

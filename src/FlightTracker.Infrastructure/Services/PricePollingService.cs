@@ -178,6 +178,6 @@ public class PricePollingService : BackgroundService
 
         _logger.LogDebug(
             "Successfully polled flight {FlightId}, next poll after {NextPollTime}",
-            flight.Id, flight.LastPolledAt.Value.AddMinutes(flight.PollingIntervalMinutes));
+            flight.Id, flight.LastPolledAt.Value.AddMinutes(flight.PollingIntervalHours));
     }
 }

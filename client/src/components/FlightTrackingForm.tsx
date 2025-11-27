@@ -3,8 +3,13 @@ import type { FormEvent } from 'react';
 import type { CreateTrackedFlightRequest } from '../types/api';
 import './FlightTrackingForm.css';
 
+interface Recipient {
+  email: string;
+  name?: string;
+}
+
 interface FlightTrackingFormProps {
-  onSubmit: (data: CreateTrackedFlightRequest) => Promise<void>;
+  onSubmit: (data: CreateTrackedFlightRequest, recipients: Recipient[]) => Promise<void>;
   userId: string;
 }
 
@@ -17,8 +22,12 @@ export default function FlightTrackingForm({ onSubmit, userId }: FlightTrackingF
     dateFlexibilityDays: 3,
     maxStops: null,
     notificationThresholdPercent: 5,
-    pollingIntervalMinutes: 15,
+    pollingIntervalHours: 6,
   });
+
+  const [recipients, setRecipients] = useState<Recipient[]>([]);
+  const [recipientEmail, setRecipientEmail] = useState('');
+  const [recipientName, setRecipientName] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +40,7 @@ export default function FlightTrackingForm({ onSubmit, userId }: FlightTrackingF
     setLoading(true);
 
     try {
-      await onSubmit(formData);
+      await onSubmit(formData, recipients);
       setSuccess(true);
       // Reset form
       setFormData({
@@ -42,8 +51,9 @@ export default function FlightTrackingForm({ onSubmit, userId }: FlightTrackingF
         dateFlexibilityDays: 3,
         maxStops: null,
         notificationThresholdPercent: 5,
-        pollingIntervalMinutes: 15,
+        pollingIntervalHours: 6,
       });
+      setRecipients([]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to track route');
     } finally {
@@ -53,6 +63,34 @@ export default function FlightTrackingForm({ onSubmit, userId }: FlightTrackingF
 
   const handleChange = (field: keyof CreateTrackedFlightRequest, value: string | number | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const addRecipient = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!recipientEmail.trim()) {
+      setError('Email is required');
+      return;
+    }
+    if (!emailRegex.test(recipientEmail)) {
+      setError('Invalid email format');
+      return;
+    }
+    if (recipients.some(r => r.email.toLowerCase() === recipientEmail.toLowerCase())) {
+      setError('Email already added');
+      return;
+    }
+
+    setRecipients(prev => [...prev, {
+      email: recipientEmail.trim(),
+      name: recipientName.trim() || undefined,
+    }]);
+    setRecipientEmail('');
+    setRecipientName('');
+    setError(null);
+  };
+
+  const removeRecipient = (email: string) => {
+    setRecipients(prev => prev.filter(r => r.email !== email));
   };
 
   return (
@@ -166,18 +204,101 @@ export default function FlightTrackingForm({ onSubmit, userId }: FlightTrackingF
 
           <div className="form-group">
             <label htmlFor="pollingInterval">
-              Check Frequency (minutes)
+              Check Frequency (hours)
             </label>
             <input
               id="pollingInterval"
               type="number"
-              min="5"
-              max="1440"
-              value={formData.pollingIntervalMinutes}
-              onChange={(e) => handleChange('pollingIntervalMinutes', Number(e.target.value))}
+              min="1"
+              max="24"
+              value={formData.pollingIntervalHours}
+              onChange={(e) => handleChange('pollingIntervalHours', Number(e.target.value))}
             />
-            <small>How often to check for price updates</small>
+            <small>How often to check for price updates (default: 6 hours)</small>
           </div>
+        </div>
+
+        <div className="form-section">
+          <h3>Email Recipients</h3>
+          <p className="section-description">
+            Add email addresses to receive price drop notifications for this route
+          </p>
+
+          <div className="recipients-input-group">
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="recipientEmail">
+                  Email Address
+                </label>
+                <input
+                  id="recipientEmail"
+                  type="email"
+                  placeholder="e.g., john@example.com"
+                  value={recipientEmail}
+                  onChange={(e) => setRecipientEmail(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addRecipient();
+                    }
+                  }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="recipientName">
+                  Name (optional)
+                </label>
+                <input
+                  id="recipientName"
+                  type="text"
+                  placeholder="e.g., John Doe"
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addRecipient();
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={addRecipient}
+              className="add-recipient-button"
+            >
+              Add Recipient
+            </button>
+          </div>
+
+          {recipients.length > 0 && (
+            <div className="recipients-list">
+              <h4>Recipients ({recipients.length})</h4>
+              <ul>
+                {recipients.map((recipient) => (
+                  <li key={recipient.email} className="recipient-item">
+                    <div className="recipient-info">
+                      <span className="recipient-email">{recipient.email}</span>
+                      {recipient.name && (
+                        <span className="recipient-name">({recipient.name})</span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeRecipient(recipient.email)}
+                      className="remove-recipient-button"
+                      aria-label={`Remove ${recipient.email}`}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {error && (

@@ -37,6 +37,16 @@ public class NotificationRecipientRepository : INotificationRecipientRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<NotificationRecipient>> GetAllWithFlightsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.NotificationRecipients
+            .Include(r => r.TrackedFlight)
+            .Where(r => r.IsActive && r.TrackedFlight.IsActive)
+            .OrderBy(r => r.Email)
+            .ThenBy(r => r.TrackedFlight.DepartureDate)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<NotificationRecipient> AddAsync(NotificationRecipient recipient, CancellationToken cancellationToken = default)
     {
         _context.NotificationRecipients.Add(recipient);

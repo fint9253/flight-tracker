@@ -17,7 +17,7 @@ public record TrackedFlightResult
     public int DateFlexibilityDays { get; init; }
     public int? MaxStops { get; init; }
     public decimal NotificationThresholdPercent { get; init; }
-    public int PollingIntervalMinutes { get; init; }
+    public int PollingIntervalHours { get; init; }
     public bool IsActive { get; init; }
     public DateTime? LastPolledAt { get; init; }
     public DateTime CreatedAt { get; init; }

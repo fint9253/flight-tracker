@@ -7,7 +7,7 @@ export interface TrackedFlight {
   dateFlexibilityDays: number;
   maxStops: number | null;
   notificationThresholdPercent: number;
-  pollingIntervalMinutes: number;
+  pollingIntervalHours: number;
   isActive: boolean;
   lastPolledAt: string | null;
   createdAt: string;
@@ -45,14 +45,14 @@ export interface FlightSearchResult {
 }
 
 export interface CreateTrackedFlightRequest {
-  userId: string;
+  // userId is no longer needed - extracted from JWT authentication
   departureAirportIATA: string;
   arrivalAirportIATA: string;
   departureDate: string;
   dateFlexibilityDays?: number;
   maxStops?: number | null;
   notificationThresholdPercent?: number;
-  pollingIntervalMinutes?: number;
+  pollingIntervalHours?: number;
 }
 
 export interface SearchFlightsRequest {

@@ -15,20 +15,20 @@ public record SearchFlightsRequest
 
 public record CreateTrackedFlightRequest
 {
-    public string UserId { get; init; } = string.Empty;
+    // UserId is extracted from JWT authentication, not from request body
     public string DepartureAirportIATA { get; init; } = string.Empty;
     public string ArrivalAirportIATA { get; init; } = string.Empty;
     public DateOnly DepartureDate { get; init; }
     public int DateFlexibilityDays { get; init; } = 3;
     public int? MaxStops { get; init; }
     public decimal NotificationThresholdPercent { get; init; } = 5.00m;
-    public int PollingIntervalMinutes { get; init; } = 15;
+    public int PollingIntervalHours { get; init; } = 6;
 }
 
 public record UpdateTrackedFlightRequest
 {
     public decimal? NotificationThresholdPercent { get; init; }
-    public int? PollingIntervalMinutes { get; init; }
+    public int? PollingIntervalHours { get; init; }
     public bool? IsActive { get; init; }
 }
 
@@ -59,7 +59,7 @@ public record TrackedFlightResponse
     public int DateFlexibilityDays { get; init; }
     public int? MaxStops { get; init; }
     public decimal NotificationThresholdPercent { get; init; }
-    public int PollingIntervalMinutes { get; init; }
+    public int PollingIntervalHours { get; init; }
     public bool IsActive { get; init; }
     public DateTime? LastPolledAt { get; init; }
     public DateTime CreatedAt { get; init; }
@@ -140,9 +140,7 @@ public class CreateTrackedFlightValidator : AbstractValidator<CreateTrackedFligh
 {
     public CreateTrackedFlightValidator()
     {
-        RuleFor(x => x.UserId)
-            .NotEmpty()
-            .MaximumLength(255);
+        // UserId validation removed - comes from authenticated JWT claims
 
         RuleFor(x => x.DepartureAirportIATA)
             .NotEmpty()
@@ -176,7 +174,7 @@ public class CreateTrackedFlightValidator : AbstractValidator<CreateTrackedFligh
             .LessThanOrEqualTo(100)
             .WithMessage("Threshold must be between 0 and 100");
 
-        RuleFor(x => x.PollingIntervalMinutes)
+        RuleFor(x => x.PollingIntervalHours)
             .GreaterThanOrEqualTo(5)
             .LessThanOrEqualTo(1440)
             .WithMessage("Polling interval must be between 5 minutes and 24 hours");
@@ -194,9 +192,9 @@ public class UpdateTrackedFlightValidator : AbstractValidator<UpdateTrackedFligh
                 .LessThanOrEqualTo(100);
         });
 
-        When(x => x.PollingIntervalMinutes.HasValue, () =>
+        When(x => x.PollingIntervalHours.HasValue, () =>
         {
-            RuleFor(x => x.PollingIntervalMinutes!.Value)
+            RuleFor(x => x.PollingIntervalHours!.Value)
                 .GreaterThanOrEqualTo(5)
                 .LessThanOrEqualTo(1440);
         });

@@ -42,9 +42,9 @@ public class CreateTrackedFlightValidator : AbstractValidator<CreateTrackedFligh
             .LessThanOrEqualTo(100)
             .WithMessage("Threshold must be between 0 and 100");
 
-        RuleFor(x => x.PollingIntervalMinutes)
-            .GreaterThanOrEqualTo(5)
-            .LessThanOrEqualTo(1440)
-            .WithMessage("Polling interval must be between 5 minutes and 24 hours");
+        RuleFor(x => x.PollingIntervalHours)
+            .GreaterThanOrEqualTo(1)
+            .LessThanOrEqualTo(24)
+            .WithMessage("Polling interval must be between 1 and 24 hours");
     }
 }

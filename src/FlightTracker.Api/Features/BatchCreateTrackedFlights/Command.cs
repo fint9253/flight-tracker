@@ -16,7 +16,7 @@ public record FlightToTrack
     public int DateFlexibilityDays { get; init; } = 3;
     public int? MaxStops { get; init; }
     public decimal NotificationThresholdPercent { get; init; } = 5.00m;
-    public int PollingIntervalMinutes { get; init; } = 15;
+    public int PollingIntervalHours { get; init; } = 15;
 }
 
 public record BatchCreateTrackedFlightsResult

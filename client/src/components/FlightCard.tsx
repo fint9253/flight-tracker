@@ -48,7 +48,7 @@ export default function FlightCard({ flight, onDelete, onToggleActive, onViewHis
           </div>
           <div className="info-item">
             <span className="label">Check Interval</span>
-            <span className="value">{flight.pollingIntervalMinutes}min</span>
+            <span className="value">{flight.pollingIntervalHours}min</span>
           </div>
         </div>
 

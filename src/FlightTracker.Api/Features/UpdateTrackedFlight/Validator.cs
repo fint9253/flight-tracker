@@ -14,12 +14,12 @@ public class UpdateTrackedFlightValidator : AbstractValidator<UpdateTrackedFligh
                 .WithMessage("Threshold must be between 0 and 100");
         });
 
-        When(x => x.PollingIntervalMinutes.HasValue, () =>
+        When(x => x.PollingIntervalHours.HasValue, () =>
         {
-            RuleFor(x => x.PollingIntervalMinutes!.Value)
-                .GreaterThanOrEqualTo(5)
-                .LessThanOrEqualTo(1440)
-                .WithMessage("Polling interval must be between 5 minutes and 24 hours");
+            RuleFor(x => x.PollingIntervalHours!.Value)
+                .GreaterThanOrEqualTo(1)
+                .LessThanOrEqualTo(24)
+                .WithMessage("Polling interval must be between 1 and 24 hours");
         });
     }
 }

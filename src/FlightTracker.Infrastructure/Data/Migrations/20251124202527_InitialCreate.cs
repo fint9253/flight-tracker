@@ -22,7 +22,7 @@ namespace FlightTracker.Infrastructure.Data.Migrations
                     ArrivalAirportIATA = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
                     DepartureDate = table.Column<DateOnly>(type: "date", nullable: false),
                     NotificationThresholdPercent = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: false),
-                    PollingIntervalMinutes = table.Column<int>(type: "integer", nullable: false),
+                    PollingIntervalHours = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     LastPolledAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),

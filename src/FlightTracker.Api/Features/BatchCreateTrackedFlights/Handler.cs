@@ -43,7 +43,7 @@ public class BatchCreateTrackedFlightsHandler : IRequestHandler<BatchCreateTrack
                     DateFlexibilityDays = flightRequest.DateFlexibilityDays,
                     MaxStops = flightRequest.MaxStops,
                     NotificationThresholdPercent = flightRequest.NotificationThresholdPercent,
-                    PollingIntervalMinutes = flightRequest.PollingIntervalMinutes,
+                    PollingIntervalHours = flightRequest.PollingIntervalHours,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow

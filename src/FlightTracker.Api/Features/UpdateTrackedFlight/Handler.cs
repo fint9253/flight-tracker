@@ -34,9 +34,9 @@ public class UpdateTrackedFlightHandler : IRequestHandler<UpdateTrackedFlightCom
             flight.NotificationThresholdPercent = request.NotificationThresholdPercent.Value;
         }
 
-        if (request.PollingIntervalMinutes.HasValue)
+        if (request.PollingIntervalHours.HasValue)
         {
-            flight.PollingIntervalMinutes = request.PollingIntervalMinutes.Value;
+            flight.PollingIntervalHours = request.PollingIntervalHours.Value;
         }
 
         if (request.IsActive.HasValue)
@@ -60,7 +60,7 @@ public class UpdateTrackedFlightHandler : IRequestHandler<UpdateTrackedFlightCom
             DateFlexibilityDays = flight.DateFlexibilityDays,
             MaxStops = flight.MaxStops,
             NotificationThresholdPercent = flight.NotificationThresholdPercent,
-            PollingIntervalMinutes = flight.PollingIntervalMinutes,
+            PollingIntervalHours = flight.PollingIntervalHours,
             IsActive = flight.IsActive,
             LastPolledAt = flight.LastPolledAt,
             CreatedAt = flight.CreatedAt,

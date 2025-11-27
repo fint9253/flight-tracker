@@ -31,7 +31,7 @@ public class CreateTrackedFlightHandler : IRequestHandler<CreateTrackedFlightCom
             DateFlexibilityDays = request.DateFlexibilityDays,
             MaxStops = request.MaxStops,
             NotificationThresholdPercent = request.NotificationThresholdPercent,
-            PollingIntervalMinutes = request.PollingIntervalMinutes,
+            PollingIntervalHours = request.PollingIntervalHours,
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -55,7 +55,7 @@ public class CreateTrackedFlightHandler : IRequestHandler<CreateTrackedFlightCom
             DateFlexibilityDays = created.DateFlexibilityDays,
             MaxStops = created.MaxStops,
             NotificationThresholdPercent = created.NotificationThresholdPercent,
-            PollingIntervalMinutes = created.PollingIntervalMinutes,
+            PollingIntervalHours = created.PollingIntervalHours,
             IsActive = created.IsActive,
             CreatedAt = created.CreatedAt
         };

@@ -34,7 +34,7 @@ public class GetTrackedFlightHandler : IRequestHandler<GetTrackedFlightQuery, Tr
             DateFlexibilityDays = flight.DateFlexibilityDays,
             MaxStops = flight.MaxStops,
             NotificationThresholdPercent = flight.NotificationThresholdPercent,
-            PollingIntervalMinutes = flight.PollingIntervalMinutes,
+            PollingIntervalHours = flight.PollingIntervalHours,
             IsActive = flight.IsActive,
             LastPolledAt = flight.LastPolledAt,
             CreatedAt = flight.CreatedAt,

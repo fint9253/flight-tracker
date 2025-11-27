@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using FlightTracker.Api.Features.AddRecipient;
 using FlightTracker.Api.Features.BatchCreateTrackedFlights;
 using FlightTracker.Api.Features.CreateTrackedFlight;
@@ -11,6 +12,7 @@ using FlightTracker.Api.Features.SearchFlights;
 using FlightTracker.Api.Features.UpdateTrackedFlight;
 using FlightTracker.Api.Models;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FlightTracker.Api.Controllers;
@@ -21,6 +23,7 @@ namespace FlightTracker.Api.Controllers;
 [ApiController]
 [Route("api/tracking")]
 [Produces("application/json")]
+[Authorize]
 public class TrackedFlightsController : ControllerBase
 {
     private readonly ISender _sender;
@@ -67,25 +70,34 @@ public class TrackedFlightsController : ControllerBase
     /// <returns>Batch result with success/failure status for each flight</returns>
     /// <response code="200">Returns batch result with per-item status</response>
     /// <response code="400">Invalid batch request</response>
+    /// <response code="401">Unauthorized - authentication required</response>
     [HttpPost("batch")]
     [ProducesResponseType(typeof(BatchCreateTrackedFlightsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<BatchCreateTrackedFlightsResponse>> BatchCreateTrackedFlights(
         [FromBody] BatchCreateTrackedFlightsRequest request,
         CancellationToken cancellationToken)
     {
+        // Extract userId from authenticated JWT token
+        var userId = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized("User ID not found in token");
+        }
+
         var command = new BatchCreateTrackedFlightsCommand
         {
             Flights = request.Flights.Select(f => new FlightToTrack
             {
-                UserId = f.UserId,
+                UserId = userId, // Use authenticated user ID for all flights
                 DepartureAirportIATA = f.DepartureAirportIATA,
                 ArrivalAirportIATA = f.ArrivalAirportIATA,
                 DepartureDate = f.DepartureDate,
                 DateFlexibilityDays = f.DateFlexibilityDays,
                 MaxStops = f.MaxStops,
                 NotificationThresholdPercent = f.NotificationThresholdPercent,
-                PollingIntervalMinutes = f.PollingIntervalMinutes
+                PollingIntervalHours = f.PollingIntervalHours
             }).ToList()
         };
 
@@ -117,23 +129,32 @@ public class TrackedFlightsController : ControllerBase
     /// <returns>The created tracked flight</returns>
     /// <response code="201">Flight tracking created successfully</response>
     /// <response code="400">Invalid request data</response>
+    /// <response code="401">Unauthorized - authentication required</response>
     [HttpPost]
     [ProducesResponseType(typeof(TrackedFlightResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<TrackedFlightResponse>> CreateTrackedFlight(
         [FromBody] CreateTrackedFlightRequest request,
         CancellationToken cancellationToken)
     {
+        // Extract userId from authenticated JWT token (Clerk uses 'sub' claim)
+        var userId = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized("User ID not found in token");
+        }
+
         var command = new CreateTrackedFlightCommand
         {
-            UserId = request.UserId,
+            UserId = userId,
             DepartureAirportIATA = request.DepartureAirportIATA,
             ArrivalAirportIATA = request.ArrivalAirportIATA,
             DepartureDate = request.DepartureDate,
             DateFlexibilityDays = request.DateFlexibilityDays,
             MaxStops = request.MaxStops,
             NotificationThresholdPercent = request.NotificationThresholdPercent,
-            PollingIntervalMinutes = request.PollingIntervalMinutes
+            PollingIntervalHours = request.PollingIntervalHours
         };
 
         var result = await _sender.Send(command, cancellationToken);
@@ -148,7 +169,7 @@ public class TrackedFlightsController : ControllerBase
             DateFlexibilityDays = result.DateFlexibilityDays,
             MaxStops = result.MaxStops,
             NotificationThresholdPercent = result.NotificationThresholdPercent,
-            PollingIntervalMinutes = result.PollingIntervalMinutes,
+            PollingIntervalHours = result.PollingIntervalHours,
             IsActive = result.IsActive,
             CreatedAt = result.CreatedAt,
             UpdatedAt = result.CreatedAt,
@@ -159,20 +180,25 @@ public class TrackedFlightsController : ControllerBase
     }
 
     /// <summary>
-    /// Retrieves all tracked flights for a specific user
+    /// Retrieves all tracked flights for the authenticated user
     /// </summary>
-    /// <param name="userId">The user's ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>List of tracked flights</returns>
     /// <response code="200">Returns the list of tracked flights</response>
-    /// <response code="400">User ID is required</response>
+    /// <response code="401">Unauthorized - authentication required</response>
     [HttpGet]
     [ProducesResponseType(typeof(List<TrackedFlightResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<List<TrackedFlightResponse>>> GetTrackedFlights(
-        [FromQuery] string userId,
         CancellationToken cancellationToken)
     {
+        // Extract userId from authenticated JWT token
+        var userId = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized("User ID not found in token");
+        }
+
         var query = new GetTrackedFlightsQuery { UserId = userId };
         var results = await _sender.Send(query, cancellationToken);
 
@@ -186,7 +212,7 @@ public class TrackedFlightsController : ControllerBase
             DateFlexibilityDays = r.DateFlexibilityDays,
             MaxStops = r.MaxStops,
             NotificationThresholdPercent = r.NotificationThresholdPercent,
-            PollingIntervalMinutes = r.PollingIntervalMinutes,
+            PollingIntervalHours = r.PollingIntervalHours,
             IsActive = r.IsActive,
             LastPolledAt = r.LastPolledAt,
             CreatedAt = r.CreatedAt,
@@ -205,20 +231,25 @@ public class TrackedFlightsController : ControllerBase
     }
 
     /// <summary>
-    /// Retrieves tracked flights grouped by route (origin to destination)
+    /// Retrieves tracked flights grouped by route (origin to destination) for the authenticated user
     /// </summary>
-    /// <param name="userId">The user's ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Flights grouped by route with statistics</returns>
     /// <response code="200">Returns flights grouped by route</response>
-    /// <response code="400">User ID is required</response>
+    /// <response code="401">Unauthorized - authentication required</response>
     [HttpGet("by-route")]
     [ProducesResponseType(typeof(GetTrackedFlightsByRouteResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<GetTrackedFlightsByRouteResponse>> GetTrackedFlightsByRoute(
-        [FromQuery] string userId,
         CancellationToken cancellationToken)
     {
+        // Extract userId from authenticated JWT token
+        var userId = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized("User ID not found in token");
+        }
+
         var query = new GetTrackedFlightsByRouteQuery { UserId = userId };
         var routeGroups = await _sender.Send(query, cancellationToken);
 
@@ -296,7 +327,7 @@ public class TrackedFlightsController : ControllerBase
             DateFlexibilityDays = result.DateFlexibilityDays,
             MaxStops = result.MaxStops,
             NotificationThresholdPercent = result.NotificationThresholdPercent,
-            PollingIntervalMinutes = result.PollingIntervalMinutes,
+            PollingIntervalHours = result.PollingIntervalHours,
             IsActive = result.IsActive,
             LastPolledAt = result.LastPolledAt,
             CreatedAt = result.CreatedAt,
@@ -337,7 +368,7 @@ public class TrackedFlightsController : ControllerBase
         {
             Id = id,
             NotificationThresholdPercent = request.NotificationThresholdPercent,
-            PollingIntervalMinutes = request.PollingIntervalMinutes,
+            PollingIntervalHours = request.PollingIntervalHours,
             IsActive = request.IsActive
         };
 
@@ -358,7 +389,7 @@ public class TrackedFlightsController : ControllerBase
             DateFlexibilityDays = result.DateFlexibilityDays,
             MaxStops = result.MaxStops,
             NotificationThresholdPercent = result.NotificationThresholdPercent,
-            PollingIntervalMinutes = result.PollingIntervalMinutes,
+            PollingIntervalHours = result.PollingIntervalHours,
             IsActive = result.IsActive,
             LastPolledAt = result.LastPolledAt,
             CreatedAt = result.CreatedAt,

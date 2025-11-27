@@ -69,6 +69,9 @@ services:
       Amadeus__ApiKey: ${AMADEUS_API_KEY}
       Amadeus__ApiSecret: ${AMADEUS_API_SECRET}
       Amadeus__BaseUrl: ${AMADEUS_BASE_URL:-https://api.amadeus.com}
+      Clerk__PublishableKey: ${CLERK_PUBLISHABLE_KEY}
+      Clerk__SecretKey: ${CLERK_SECRET_KEY}
+      Clerk__Domain: ${CLERK_DOMAIN}
     depends_on:
       postgres:
         condition: service_healthy

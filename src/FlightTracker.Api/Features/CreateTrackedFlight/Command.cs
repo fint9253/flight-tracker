@@ -11,7 +11,7 @@ public record CreateTrackedFlightCommand : IRequest<CreateTrackedFlightResult>
     public int DateFlexibilityDays { get; init; } = 3;
     public int? MaxStops { get; init; }
     public decimal NotificationThresholdPercent { get; init; } = 5.00m;
-    public int PollingIntervalMinutes { get; init; } = 15;
+    public int PollingIntervalHours { get; init; } = 6;
 }
 
 public record CreateTrackedFlightResult
@@ -24,7 +24,7 @@ public record CreateTrackedFlightResult
     public int DateFlexibilityDays { get; init; }
     public int? MaxStops { get; init; }
     public decimal NotificationThresholdPercent { get; init; }
-    public int PollingIntervalMinutes { get; init; }
+    public int PollingIntervalHours { get; init; }
     public bool IsActive { get; init; }
     public DateTime CreatedAt { get; init; }
 }
