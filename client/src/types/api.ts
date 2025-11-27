@@ -28,6 +28,26 @@ export interface PriceHistory {
   price: number;
   currency: string;
   pollTimestamp: string;
+  offerDetails?: FlightOfferDetails;
+}
+
+export interface FlightOfferDetails {
+  departureDate: string;
+  departureDateTime: string;
+  arrivalDateTime: string;
+  totalDuration: string; // TimeSpan from C# serializes as string
+  segments: FlightSegment[];
+}
+
+export interface FlightSegment {
+  departureAirport: string;
+  arrivalAirport: string;
+  departureTime: string;
+  arrivalTime: string;
+  duration: string; // TimeSpan from C# serializes as string
+  carrierCode: string;
+  flightNumber: string;
+  layoverDuration?: string; // TimeSpan from C# serializes as string
 }
 
 export interface FlightSearchResult {

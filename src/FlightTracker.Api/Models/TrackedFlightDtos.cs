@@ -75,6 +75,28 @@ public record PriceHistoryResponse
     public decimal Price { get; init; }
     public string Currency { get; init; } = "USD";
     public DateTime PollTimestamp { get; init; }
+    public FlightOfferDetailsResponse? OfferDetails { get; init; }
+}
+
+public record FlightOfferDetailsResponse
+{
+    public DateOnly DepartureDate { get; init; }
+    public DateTime DepartureDateTime { get; init; }
+    public DateTime ArrivalDateTime { get; init; }
+    public TimeSpan TotalDuration { get; init; }
+    public List<FlightSegmentDetailsResponse> Segments { get; init; } = new();
+}
+
+public record FlightSegmentDetailsResponse
+{
+    public string DepartureAirport { get; init; } = string.Empty;
+    public string ArrivalAirport { get; init; } = string.Empty;
+    public DateTime DepartureTime { get; init; }
+    public DateTime ArrivalTime { get; init; }
+    public TimeSpan Duration { get; init; }
+    public string CarrierCode { get; init; } = string.Empty;
+    public string FlightNumber { get; init; } = string.Empty;
+    public TimeSpan? LayoverDuration { get; init; }
 }
 
 public record NotificationRecipientResponse

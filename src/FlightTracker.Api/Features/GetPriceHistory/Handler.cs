@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FlightTracker.Core.Interfaces;
 using MediatR;
 
@@ -39,7 +40,10 @@ public class GetPriceHistoryHandler : IRequestHandler<GetPriceHistoryQuery, GetP
                 Id = h.Id,
                 Price = h.Price,
                 Currency = h.Currency,
-                PollTimestamp = h.PollTimestamp
+                PollTimestamp = h.PollTimestamp,
+                OfferDetails = !string.IsNullOrEmpty(h.OfferDetailsJson)
+                    ? JsonSerializer.Deserialize<FlightOfferDetails>(h.OfferDetailsJson)
+                    : null
             }).ToList()
         };
     }

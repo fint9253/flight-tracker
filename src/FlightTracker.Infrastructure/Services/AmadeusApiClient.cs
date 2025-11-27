@@ -209,7 +209,8 @@ public class AmadeusApiClient : IFlightPriceService, IFlightSearchService
                             Currency = cheapestOffer.Price.Currency,
                             RetrievedAt = DateTime.UtcNow,
                             CarrierCode = cheapestOffer.ValidatingAirlineCodes?.FirstOrDefault(),
-                            NumberOfStops = stops
+                            NumberOfStops = stops,
+                            OfferDetails = BuildOfferDetails(cheapestOffer, currentDate)
                         };
 
                         _logger.LogDebug("Found cheaper option on {Date}: {Price} {Currency} ({Stops} stops)",
@@ -284,6 +285,60 @@ public class AmadeusApiClient : IFlightPriceService, IFlightSearchService
         _logger.LogInformation("Successfully obtained Amadeus access token, expires in {Seconds}s", tokenResponse.ExpiresIn);
 
         return tokenResponse.AccessToken;
+    }
+
+    private FlightOfferDetails? BuildOfferDetails(FlightOffer offer, DateOnly searchDate)
+    {
+        var itinerary = offer.Itineraries?.FirstOrDefault();
+        if (itinerary?.Segments == null || itinerary.Segments.Count == 0)
+        {
+            return null;
+        }
+
+        var segments = new List<FlightSegmentDetails>();
+        DateTime? previousArrival = null;
+
+        foreach (var segment in itinerary.Segments)
+        {
+            if (segment.Departure?.At == null || segment.Arrival?.At == null)
+            {
+                continue;
+            }
+
+            var departureTime = DateTime.Parse(segment.Departure.At);
+            var arrivalTime = DateTime.Parse(segment.Arrival.At);
+
+            segments.Add(new FlightSegmentDetails
+            {
+                DepartureAirport = segment.Departure.IataCode ?? "",
+                ArrivalAirport = segment.Arrival.IataCode ?? "",
+                DepartureTime = departureTime,
+                ArrivalTime = arrivalTime,
+                Duration = arrivalTime - departureTime,
+                CarrierCode = segment.CarrierCode ?? "",
+                FlightNumber = $"{segment.CarrierCode}{segment.Number}",
+                LayoverDuration = previousArrival.HasValue ? departureTime - previousArrival.Value : null
+            });
+
+            previousArrival = arrivalTime;
+        }
+
+        if (segments.Count == 0)
+        {
+            return null;
+        }
+
+        var firstSegment = segments.First();
+        var lastSegment = segments.Last();
+
+        return new FlightOfferDetails
+        {
+            DepartureDate = DateOnly.FromDateTime(firstSegment.DepartureTime),
+            DepartureDateTime = firstSegment.DepartureTime,
+            ArrivalDateTime = lastSegment.ArrivalTime,
+            TotalDuration = lastSegment.ArrivalTime - firstSegment.DepartureTime,
+            Segments = segments
+        };
     }
 
     public async Task<List<FlightSearchResult>> SearchFlightsAsync(

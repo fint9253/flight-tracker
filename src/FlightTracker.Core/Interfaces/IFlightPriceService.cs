@@ -47,4 +47,32 @@ public record FlightPriceData
     public DateTime RetrievedAt { get; init; } = DateTime.UtcNow;
     public string? CarrierCode { get; init; }
     public int NumberOfStops { get; init; }
+    public FlightOfferDetails? OfferDetails { get; init; }
+}
+
+/// <summary>
+/// Detailed flight offer information including itinerary and segments.
+/// </summary>
+public record FlightOfferDetails
+{
+    public DateOnly DepartureDate { get; init; }
+    public DateTime DepartureDateTime { get; init; }
+    public DateTime ArrivalDateTime { get; init; }
+    public TimeSpan TotalDuration { get; init; }
+    public List<FlightSegmentDetails> Segments { get; init; } = new();
+}
+
+/// <summary>
+/// Individual flight segment (leg) information.
+/// </summary>
+public record FlightSegmentDetails
+{
+    public string DepartureAirport { get; init; } = string.Empty;
+    public string ArrivalAirport { get; init; } = string.Empty;
+    public DateTime DepartureTime { get; init; }
+    public DateTime ArrivalTime { get; init; }
+    public TimeSpan Duration { get; init; }
+    public string CarrierCode { get; init; } = string.Empty;
+    public string FlightNumber { get; init; } = string.Empty;
+    public TimeSpan? LayoverDuration { get; init; } // Time until next segment
 }

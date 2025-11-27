@@ -1,3 +1,4 @@
+using FlightTracker.Core.Interfaces;
 using MediatR;
 
 namespace FlightTracker.Api.Features.GetPriceHistory;
@@ -20,4 +21,5 @@ public record PriceHistoryItem
     public decimal Price { get; init; }
     public string Currency { get; init; } = string.Empty;
     public DateTime PollTimestamp { get; init; }
+    public FlightOfferDetails? OfferDetails { get; init; }
 }

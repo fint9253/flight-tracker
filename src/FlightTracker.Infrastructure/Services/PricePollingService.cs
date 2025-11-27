@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FlightTracker.Core.Entities;
 using FlightTracker.Core.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -129,7 +130,10 @@ public class PricePollingService : BackgroundService
             TrackedFlightId = flight.Id,
             Price = priceData.Price,
             Currency = priceData.Currency,
-            PollTimestamp = priceData.RetrievedAt
+            PollTimestamp = priceData.RetrievedAt,
+            OfferDetailsJson = priceData.OfferDetails != null
+                ? JsonSerializer.Serialize(priceData.OfferDetails)
+                : null
         };
         await priceHistoryRepo.AddAsync(priceHistory, cancellationToken);
 
