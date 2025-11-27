@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FlightTracker.Core.Entities;
 using FlightTracker.Core.Interfaces;
 using MediatR;
@@ -8,13 +9,19 @@ namespace FlightTracker.Api.Features.CreateTrackedFlight;
 public class CreateTrackedFlightHandler : IRequestHandler<CreateTrackedFlightCommand, CreateTrackedFlightResult>
 {
     private readonly ITrackedFlightRepository _repository;
+    private readonly IPriceHistoryRepository _priceHistoryRepository;
+    private readonly IFlightPriceService _flightPriceService;
     private readonly ILogger<CreateTrackedFlightHandler> _logger;
 
     public CreateTrackedFlightHandler(
         ITrackedFlightRepository repository,
+        IPriceHistoryRepository priceHistoryRepository,
+        IFlightPriceService flightPriceService,
         ILogger<CreateTrackedFlightHandler> logger)
     {
         _repository = repository;
+        _priceHistoryRepository = priceHistoryRepository;
+        _flightPriceService = flightPriceService;
         _logger = logger;
     }
 
@@ -44,6 +51,51 @@ public class CreateTrackedFlightHandler : IRequestHandler<CreateTrackedFlightCom
             created.Id, created.UserId,
             created.DepartureAirportIATA, created.ArrivalAirportIATA, created.DepartureDate,
             created.DateFlexibilityDays, created.MaxStops?.ToString() ?? "any");
+
+        // Immediately fetch first price to populate data
+        try
+        {
+            var priceData = await _flightPriceService.GetRoutePriceAsync(
+                created.DepartureAirportIATA,
+                created.ArrivalAirportIATA,
+                created.DepartureDate,
+                created.DateFlexibilityDays,
+                created.MaxStops,
+                cancellationToken);
+
+            if (priceData != null)
+            {
+                var priceHistory = new PriceHistory
+                {
+                    TrackedFlightId = created.Id,
+                    Price = priceData.Price,
+                    Currency = priceData.Currency,
+                    PollTimestamp = priceData.RetrievedAt,
+                    OfferDetailsJson = priceData.OfferDetails != null
+                        ? JsonSerializer.Serialize(priceData.OfferDetails)
+                        : null
+                };
+                await _priceHistoryRepository.AddAsync(priceHistory, cancellationToken);
+
+                created.LastPolledAt = DateTime.UtcNow;
+                await _repository.UpdateAsync(created, cancellationToken);
+
+                _logger.LogInformation(
+                    "Initial price fetched for flight {FlightId}: {Price} {Currency}",
+                    created.Id, priceData.Price, priceData.Currency);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "No initial price data available for flight {FlightId}",
+                    created.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to fetch initial price for flight {FlightId}", created.Id);
+            // Don't fail the request if price fetch fails
+        }
 
         return new CreateTrackedFlightResult
         {
