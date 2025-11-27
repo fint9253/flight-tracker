@@ -80,6 +80,8 @@ export const flightTrackingApi = {
     data: {
       notificationThresholdPercent?: number;
       pollingIntervalHours?: number;
+      dateFlexibilityDays?: number;
+      maxStops?: number | null;
       isActive?: boolean;
     }
   ): Promise<TrackedFlight> => {

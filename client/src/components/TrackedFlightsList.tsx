@@ -3,6 +3,7 @@ import type { TrackedFlight } from '../types/api';
 import { flightTrackingApi } from '../services/api';
 import FlightCard from './FlightCard';
 import PriceHistoryChart from './PriceHistoryChart';
+import EditFlightModal from './EditFlightModal';
 import './TrackedFlightsList.css';
 
 interface TrackedFlightsListProps {
@@ -15,6 +16,7 @@ export default function TrackedFlightsList({ userId, onFlightDeleted }: TrackedF
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedFlightId, setSelectedFlightId] = useState<string | null>(null);
+  const [editingFlight, setEditingFlight] = useState<TrackedFlight | null>(null);
 
   const fetchFlights = async () => {
     try {
@@ -58,6 +60,24 @@ export default function TrackedFlightsList({ userId, onFlightDeleted }: TrackedF
 
   const handleViewHistory = (flightId: string) => {
     setSelectedFlightId(selectedFlightId === flightId ? null : flightId);
+  };
+
+  const handleEdit = (flight: TrackedFlight) => {
+    setEditingFlight(flight);
+  };
+
+  const handleSaveEdit = async (updates: {
+    notificationThresholdPercent?: number;
+    pollingIntervalHours?: number;
+    dateFlexibilityDays?: number;
+    maxStops?: number | null;
+    isActive?: boolean;
+  }) => {
+    if (!editingFlight) return;
+
+    const updated = await flightTrackingApi.updateTrackedFlight(editingFlight.id, updates);
+    setFlights(prev => prev.map(f => f.id === editingFlight.id ? updated : f));
+    setEditingFlight(null);
   };
 
   if (loading) {
@@ -121,6 +141,7 @@ export default function TrackedFlightsList({ userId, onFlightDeleted }: TrackedF
                 onDelete={() => handleDelete(flight.id)}
                 onToggleActive={() => handleToggleActive(flight.id, !flight.isActive)}
                 onViewHistory={() => handleViewHistory(flight.id)}
+                onEdit={() => handleEdit(flight)}
               />
             ))}
           </div>
@@ -138,6 +159,7 @@ export default function TrackedFlightsList({ userId, onFlightDeleted }: TrackedF
                 onDelete={() => handleDelete(flight.id)}
                 onToggleActive={() => handleToggleActive(flight.id, !flight.isActive)}
                 onViewHistory={() => handleViewHistory(flight.id)}
+                onEdit={() => handleEdit(flight)}
               />
             ))}
           </div>
@@ -156,6 +178,14 @@ export default function TrackedFlightsList({ userId, onFlightDeleted }: TrackedF
           />
         );
       })()}
+
+      {editingFlight && (
+        <EditFlightModal
+          flight={editingFlight}
+          onSave={handleSaveEdit}
+          onClose={() => setEditingFlight(null)}
+        />
+      )}
     </div>
   );
 }

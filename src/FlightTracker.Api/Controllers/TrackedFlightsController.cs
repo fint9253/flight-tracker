@@ -356,6 +356,7 @@ public class TrackedFlightsController : ControllerBase
     /// <response code="400">Invalid request data</response>
     /// <response code="404">Tracked flight not found</response>
     [HttpPatch("{id}")]
+    [HttpPut("{id}")]
     [ProducesResponseType(typeof(TrackedFlightResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -369,6 +370,8 @@ public class TrackedFlightsController : ControllerBase
             Id = id,
             NotificationThresholdPercent = request.NotificationThresholdPercent,
             PollingIntervalHours = request.PollingIntervalHours,
+            DateFlexibilityDays = request.DateFlexibilityDays,
+            MaxStops = request.MaxStops,
             IsActive = request.IsActive
         };
 

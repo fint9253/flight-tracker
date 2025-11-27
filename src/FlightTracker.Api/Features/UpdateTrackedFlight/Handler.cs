@@ -39,6 +39,16 @@ public class UpdateTrackedFlightHandler : IRequestHandler<UpdateTrackedFlightCom
             flight.PollingIntervalHours = request.PollingIntervalHours.Value;
         }
 
+        if (request.DateFlexibilityDays.HasValue)
+        {
+            flight.DateFlexibilityDays = request.DateFlexibilityDays.Value;
+        }
+
+        if (request.MaxStops.HasValue)
+        {
+            flight.MaxStops = request.MaxStops.Value;
+        }
+
         if (request.IsActive.HasValue)
         {
             flight.IsActive = request.IsActive.Value;

@@ -6,9 +6,10 @@ interface FlightCardProps {
   onDelete: () => void;
   onToggleActive: () => void;
   onViewHistory: () => void;
+  onEdit: () => void;
 }
 
-export default function FlightCard({ flight, onDelete, onToggleActive, onViewHistory }: FlightCardProps) {
+export default function FlightCard({ flight, onDelete, onToggleActive, onViewHistory, onEdit }: FlightCardProps) {
   const isPastFlight = new Date(flight.departureDate) < new Date();
   const formattedDate = new Date(flight.departureDate).toLocaleDateString('en-US', {
     month: 'short',
@@ -73,6 +74,13 @@ export default function FlightCard({ flight, onDelete, onToggleActive, onViewHis
           title="View price history"
         >
           📊 Price History
+        </button>
+        <button
+          onClick={onEdit}
+          className="btn-edit"
+          title="Edit flight settings"
+        >
+          ✏️ Edit
         </button>
         <button
           onClick={onToggleActive}

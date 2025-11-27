@@ -29,6 +29,8 @@ public record UpdateTrackedFlightRequest
 {
     public decimal? NotificationThresholdPercent { get; init; }
     public int? PollingIntervalHours { get; init; }
+    public int? DateFlexibilityDays { get; init; }
+    public int? MaxStops { get; init; }
     public bool? IsActive { get; init; }
 }
 
@@ -195,8 +197,22 @@ public class UpdateTrackedFlightValidator : AbstractValidator<UpdateTrackedFligh
         When(x => x.PollingIntervalHours.HasValue, () =>
         {
             RuleFor(x => x.PollingIntervalHours!.Value)
-                .GreaterThanOrEqualTo(5)
-                .LessThanOrEqualTo(1440);
+                .GreaterThanOrEqualTo(1)
+                .LessThanOrEqualTo(24);
+        });
+
+        When(x => x.DateFlexibilityDays.HasValue, () =>
+        {
+            RuleFor(x => x.DateFlexibilityDays!.Value)
+                .GreaterThanOrEqualTo(0)
+                .LessThanOrEqualTo(7);
+        });
+
+        When(x => x.MaxStops.HasValue, () =>
+        {
+            RuleFor(x => x.MaxStops!.Value)
+                .GreaterThanOrEqualTo(0)
+                .LessThanOrEqualTo(3);
         });
     }
 }

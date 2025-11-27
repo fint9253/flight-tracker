@@ -1,0 +1,300 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #1f2937;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: #1f2937;
+}
+
+.edit-flight-form {
+  padding: 1.5rem;
+}
+
+.form-section {
+  margin-bottom: 2rem;
+}
+
+.form-section h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  color: #374151;
+  font-weight: 600;
+}
+
+.readonly-field {
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.readonly-field .airport-code {
+  font-weight: 600;
+  color: #4f46e5;
+  font-size: 1.1rem;
+}
+
+.readonly-field .arrow {
+  margin: 0 0.5rem;
+  color: #9ca3af;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #374151;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.field-hint {
+  display: block;
+  font-weight: 400;
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+.form-group input[type="number"],
+.form-group select {
+  width: 100%;
+  padding: 0.625rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.15s;
+}
+
+.form-group input[type="number"]:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+  margin-top: 0.25rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  cursor: pointer;
+}
+
+.checkbox-group span {
+  flex: 1;
+}
+
+.error-message {
+  padding: 0.75rem;
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  color: #991b1b;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.btn-cancel,
+.btn-save {
+  padding: 0.625rem 1.25rem;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+}
+
+.btn-cancel {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background-color: #e5e7eb;
+}
+
+.btn-save {
+  background-color: #4f46e5;
+  color: white;
+}
+
+.btn-save:hover:not(:disabled) {
+  background-color: #4338ca;
+}
+
+.btn-cancel:disabled,
+.btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Recipients Section */
+.recipients-list {
+  margin-bottom: 1.25rem;
+}
+
+.recipient-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.recipient-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.recipient-email {
+  font-weight: 500;
+  color: #374151;
+}
+
+.recipient-name {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.btn-remove-recipient {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.btn-remove-recipient:hover {
+  color: #dc2626;
+}
+
+.no-recipients {
+  color: #6b7280;
+  font-style: italic;
+  font-size: 0.95rem;
+  margin-bottom: 1.25rem;
+}
+
+.add-recipient-form {
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  border: 1px dashed #d1d5db;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-group input[type="email"],
+.form-group input[type="text"] {
+  width: 100%;
+  padding: 0.625rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.15s;
+}
+
+.form-group input[type="email"]:focus,
+.form-group input[type="text"]:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.btn-add-recipient {
+  padding: 0.625rem 1.25rem;
+  background-color: #059669;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.btn-add-recipient:hover:not(:disabled) {
+  background-color: #047857;
+}
+
+.btn-add-recipient:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
